@@ -50,7 +50,7 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `BLOCKED` waitin
 - [x] Remove the remaining user-visible "prototype" wording: `app.js` consent sheet, wellness view, modules panel, and booking/program/membership toasts. Retain clear sample-data and unavailable-feature disclosures.
 - [ ] Hide or finish features the app itself says are not built (the modules panel lists unavailable service capabilities). Apple rejects apps with placeholder or demo features (2.1). Record any proposed feature removal under "Needs from the owner" first.
 - [ ] The consent toggles "Contribute to wellness research" and "Help improve the models" record a choice but nothing is sent anywhere. Either remove them or build the real flow; store privacy answers must match the code.
-- [ ] Owner reviews and approves the legal text. **BLOCKED — needs owner: approve the privacy policy and terms, supply the company legal name and address, and confirm the contact email** (see Needs from the owner #1).
+- [ ] Owner reviews and approves the legal text. **BLOCKED — needs owner: approve the app-specific privacy policy and terms after the public company/contact details have been sourced from zuporta.com** (see Needs from the owner #1 and Public details to source below).
 
 ### M2 — Native wrapper (Capacitor)
 - [ ] Add `package.json`, `capacitor.config.json` (app id `com.zuporta.plus`, web dir `connect.zuporta.com`).
@@ -99,13 +99,22 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `BLOCKED` waitin
 
 Items the automated session cannot do. Each one unblocks the milestone named.
 
-1. **Review the legal text** in `connect.zuporta.com/privacy.html` and `terms.html`. They are drafts written from what the code does; a lawyer or the business owner must approve them, fill in the company legal name and address, and confirm the contact email. (M1)
+1. **Review the legal text** in `connect.zuporta.com/privacy.html` and `terms.html` after the public details below have been sourced. They are app-specific drafts written from what the code does; a lawyer or the business owner must approve them. Source the company and contact details from zuporta.com as the owner instructed; do not request those details again before checking that site. Published website terms do not establish approval of these app-specific drafts. (M1)
 2. **Apple Developer Program** membership (US$99/year) under the business name, and the **Team ID**. (M2, M4, M6)
 3. **Google Play Console** account (US$25 one-time), with identity verification completed. Organization accounts need a D-U-N-S number. (M4, M6)
 4. **Signing secrets** added to the GitHub repo (Settings → Secrets and variables → Actions). The session will list exact names when M4 starts. Never paste keys into chat. (M4)
 5. **Hosting access**: confirm where connect.zuporta.com is hosted (GoDaddy hosting or elsewhere) and how files get deployed from this repo, so `/.well-known/` files and the legal pages actually go live. (M1, M6)
-6. **Support email and support URL** for the store listings. (M5)
+6. **Allow access to the public source site**: review and save the environment network draft adding `zuporta.com` and `www.zuporta.com`, then publish the environment. The current proxy denies HTTPS access to zuporta.com with `403 Forbidden` before reaching the website. This blocks verification of public company, contact and support details; it does not mean those details are missing from the site. (M1, M5)
 7. **Crisis numbers**: a human must verify each line in `assets/js/data.js` → `CRISIS` on the provider's own website for every country the app will be listed in. (M7)
+
+### Public details to source
+
+Owner instruction (2026-10-15): use https://zuporta.com/ for the public
+company, contact, support and legal details. Retrieve these instead of
+asking the owner to repeat information already published there.
+
+- [ ] Read the site's linked legal and contact/support pages; record the exact source URLs and retrieval date, then use verified company legal name, postal address, appropriate contact email and support URL in the app drafts and store material. **BLOCKED — needs owner: apply the environment network changes in owner item #6**. The first retrieval attempt was denied by the environment proxy; no public details have been verified or copied yet.
+- Keep bracketed placeholders for facts that cannot be verified. Do not infer a legal entity from branding, invent a support email, or copy website data-retention, account-deletion, minimum-age or jurisdiction provisions into the app policy without checking their scope and the app's behavior. Record any genuinely unresolved fact in the owner list after inspecting the source.
 
 ---
 
@@ -113,3 +122,4 @@ Items the automated session cannot do. Each one unblocks the milestone named.
 
 - 2026-10-14 — Audit done, roadmap written, M1 work started (legal page drafts, Settings links, "prototype" wording removed).
 - 2026-10-15 — M1: replaced all six user-visible "prototype" messages with accurate storage, sample-data and unavailable-feature copy; verified the consent sheet, wellness view, all seven module scope sheets and three toasts in Chromium (no runtime errors), plus JavaScript syntax and diff checks. Legal approval remains blocked on owner #1.
+- 2026-10-15 — Recorded the owner's instruction to source public business/support/legal details from zuporta.com; replaced repeat requests for those details with a source-retrieval task. HTTPS retrieval was blocked by the environment proxy (403); saved the two site hostnames in the network draft. No public facts or legal approvals were inferred.
