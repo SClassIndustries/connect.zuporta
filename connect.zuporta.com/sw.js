@@ -17,11 +17,13 @@
    coupled to the markup.
    ============================================================ */
 
-const VERSION = 'zuporta-v9';
+const VERSION = 'zuporta-v10';
 
 const SHELL = [
   './',
   './index.html',
+  './privacy.html',
+  './terms.html',
   './manifest.webmanifest',
   './assets/css/app.css',
   './assets/js/app.js',

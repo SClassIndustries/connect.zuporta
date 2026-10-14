@@ -1299,12 +1299,19 @@ function viewSettings() {
   const about = card();
   about.appendChild(el('p', 'card__k', 'About'));
   about.appendChild(el('p', 'card__body',
-    'Zuporta+ is the personal wellness companion from Zuporta, powered by Zuporta Connect™. This build is a prototype: guided responses are generated on the device and no booking or payment is connected.'));
+    'Zuporta+ is the personal wellness companion from Zuporta, powered by Zuporta Connect™. Guided responses are generated on your device. Booking and payment for coaching sessions happen on zuporta.com.'));
   const link = el('a', 'link', 'zuporta.com');
   link.href = 'https://zuporta.com'; link.target = '_blank'; link.rel = 'noopener noreferrer';
   const ap = el('p', 'card__body');
   ap.append(document.createTextNode('A Zuporta product · '), link);
   about.appendChild(ap);
+  const privacy = el('a', 'link', 'Privacy Policy');
+  privacy.href = 'privacy.html';
+  const terms = el('a', 'link', 'Terms of Use');
+  terms.href = 'terms.html';
+  const legal = el('p', 'card__body');
+  legal.append(privacy, document.createTextNode(' · '), terms);
+  about.appendChild(legal);
   wrap.appendChild(about);
   return wrap;
 }
