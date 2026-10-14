@@ -8,12 +8,12 @@
         Need → Understand → Guide → Measure → Learn
              → Personalize → Connect → Continue
 
-   PROTOTYPE NOTE: responses are deterministic and produced on the
+   Responses are deterministic and produced on the
    device. There is no model call. `respondToText` / `respondToAction`
    are the seam where Zuporta Connect™ would sit.
    ============================================================ */
 
-import { ACTIVITIES, activityFor, topicLabel, matchPros, CONTEXTS, COPING } from './data.js';
+import { ACTIVITIES, activityFor, topicLabel, CONTEXTS, COPING } from './data.js';
 
 /* ---------- block helpers ---------- */
 
@@ -374,5 +374,3 @@ function matchFocus(topic) {
     talk: 'listening, stress and personal growth',
   })[topic] || 'stress, overwhelm and personal growth';
 }
-
-export { matchPros };

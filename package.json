@@ -1,0 +1,26 @@
+{
+  "name": "zuporta-plus",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zuporta+ web and native wellness companion",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "start": "python3 -m http.server 8000 --bind 127.0.0.1 --directory connect.zuporta.com",
+    "sync": "cap sync",
+    "sync:android": "cap sync android",
+    "sync:ios": "cap sync ios",
+    "test:ui": "python3 tests/release_ui.py",
+    "assets:native": "node scripts/generate-native-assets.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/ios": "8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "3.0.5",
+    "@capacitor/cli": "8.5.3"
+  }
+}

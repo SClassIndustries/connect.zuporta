@@ -17,7 +17,7 @@
    coupled to the markup.
    ============================================================ */
 
-const VERSION = 'zuporta-v11';
+const VERSION = 'zuporta-v12';
 
 const SHELL = [
   './',
@@ -31,15 +31,8 @@ const SHELL = [
   './assets/js/assistant.js',
   './assets/js/modules.js',
   './assets/js/zuporta-api.js',
-  './assets/js/flow.js',
-  './assets/js/caregiver.js',
-  './assets/js/career.js',
-  './assets/js/nightshift.js',
-  './assets/js/parentbridge.js',
   './assets/js/care.js',
-  './assets/js/nurseguide.js',
   './assets/js/baseline.js',
-  './assets/js/navigator.js',
   './assets/img/mark.svg',
   './assets/img/icon-192.png',
   './assets/img/icon-512.png',

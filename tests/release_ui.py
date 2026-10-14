@@ -8,6 +8,8 @@ errors=[]
 with sync_playwright() as p:
     browser=p.chromium.launch(executable_path=os.environ.get('ZUPORTA_CHROMIUM', '/usr/bin/chromium'),headless=True,args=['--no-sandbox'])
     context=browser.new_context(viewport={'width':390,'height':844},reduced_motion='reduce')
+    # iOS 15.0 supports our native target but predates Object.hasOwn.
+    context.add_init_script('Object.hasOwn = undefined;')
     context.route('https://api.zuporta.com/**',lambda route:route.abort())
     page=context.new_page()
     page.on('pageerror',lambda error:errors.append(str(error)))
