@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zuporta+ — Your Personal Wellness Companion</title>
+<meta name="description" content="Need someone to talk to? Zuporta+ gives you personalized wellness support when you need it, with meaningful human connection when you want it. Powered by Zuporta Connect.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1720" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#2c63a8">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/img/mark.svg" type="image/svg+xml">
+<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Zuporta+">
+<link rel="stylesheet" href="assets/css/app.css">
+<script>
+  // Theme before first paint, so it never flashes.
+  try {
+    var t = localStorage.getItem('zuporta.theme');
+    if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+  } catch (e) {}
+  // Chrome can fire this before the module finishes loading, so catch it here
+  // and let the app pick it up. Without this the install button never appears.
+  window.__zupInstall = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    window.__zupInstall = e;
+    window.dispatchEvent(new Event('zup:installable'));
+  });
+
+  // Service worker lives here rather than in the module: if the module ever
+  // fails to run, registration and the recovery reload below must still work.
+  if ('serviceWorker' in navigator) {
+    var hadController = !!navigator.serviceWorker.controller;
+    var reloaded = false;
+    // A worker taking over mid-session means this page was loaded with the
+    // previous worker's assets. Reload once so markup and code match again.
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (!hadController || reloaded) return;
+      reloaded = true;
+      location.reload();
+    });
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     Watchdog + visible error reporting.
+
+     Lives inline, and uses only inline styles, so it still works when the
+     module fails to run or the stylesheet never arrives. iOS Safari keeps
+     its own service worker registration and cache, entirely separate from
+     other browsers on the same phone, so it can be left holding a stale
+     build long after every other browser has moved on. If the app has not
+     rendered shortly after load, clear everything once and reload.
+     ------------------------------------------------------------------ */
+  (function () {
+    var RESET_KEY = 'zuporta.selfheal';
+    var reported = false;
+
+    function panel(message) {
+      if (reported) return;
+      reported = true;
+      var box = document.createElement('div');
+      box.setAttribute('role', 'alert');
+      box.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:9999;'
+        + 'background:#fff;color:#10202E;border-top:2px solid #2C63A8;padding:16px;'
+        + 'font:14px/1.5 -apple-system,system-ui,sans-serif;max-height:60vh;overflow:auto';
+      var h = document.createElement('p');
+      h.textContent = 'Zuporta+ could not start on this browser.';
+      h.style.cssText = 'font-weight:700;margin:0 0 6px';
+      var m = document.createElement('p');
+      m.textContent = message;
+      m.style.cssText = 'margin:0 0 12px;color:#56697B;word-break:break-word';
+      var b = document.createElement('button');
+      b.textContent = 'Reset and try again';
+      b.style.cssText = 'min-height:44px;padding:10px 18px;border:0;border-radius:999px;'
+        + 'background:#2C63A8;color:#fff;font-weight:600;font-size:15px';
+      b.onclick = function () { hardReset(true); };
+      box.appendChild(h); box.appendChild(m); box.appendChild(b);
+      (document.body || document.documentElement).appendChild(box);
+    }
+
+    function hardReset(force) {
+      var jobs = [];
+      if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations) {
+        jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+          return Promise.all(rs.map(function (r) { return r.unregister(); }));
+        }));
+      }
+      if (window.caches && caches.keys) {
+        jobs.push(caches.keys().then(function (ks) {
+          return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+        }));
+      }
+      Promise.all(jobs)['catch'](function () {}).then(function () {
+        if (force) { try { sessionStorage.removeItem(RESET_KEY); } catch (e) {} }
+        location.reload();
+      });
+    }
+
+    window.addEventListener('error', function (e) {
+      var where = (e.filename || '').split('/').pop();
+      panel((e.message || 'Script error') + (where ? ' — ' + where + ':' + e.lineno : ''));
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+      var r = e.reason;
+      panel('Unhandled: ' + ((r && r.message) || r));
+    });
+
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        var view = document.getElementById('view');
+        if (!view || view.children.length > 0) return;   // rendered fine
+        var tried;
+        try { tried = sessionStorage.getItem(RESET_KEY); } catch (e) { tried = null; }
+        if (!tried) {
+          try { sessionStorage.setItem(RESET_KEY, '1'); } catch (e) {}
+          hardReset(false);                              // stale cache: heal silently
+        } else {
+          panel('The app loaded but did not start, even after clearing its cache.');
+        }
+      }, 2500);
+    });
+  })();
+</script>
+</head>
+<body>
+<a class="skip-link" href="#view">Skip to content</a>
+
+<div class="app">
+  <div class="scrim" id="scrim" hidden></div>
+
+  <!-- ───────────────────────── navigation ───────────────────────── -->
+  <aside class="nav" id="nav" aria-label="Main navigation">
+    <div class="nav__head">
+      <span class="brand">
+        <svg class="brand__mark" width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><use href="#i-mark"/></svg>
+        <span class="brand__word">Zuporta<span class="brand__plus">+</span></span>
+      </span>
+      <button class="icon-btn nav__close" id="nav-close" type="button" aria-label="Close menu">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </div>
+
+    <nav class="nav__scroll" aria-label="Sections">
+      <ul class="nav__list" id="nav-list"></ul>
+    </nav>
+
+    <div class="nav__foot">
+      <button class="btn btn--talk" id="talk-btn" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-user"/></svg>
+        Talk to Someone
+      </button>
+      <div class="nav__row">
+        <button class="chip-btn" id="theme-toggle" type="button" aria-label="Switch to dark theme">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-moon"/></svg>
+          <span id="theme-label">Dark</span>
+        </button>
+        <button class="chip-btn" id="install-btn" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-install"/></svg>
+          Install
+        </button>
+      </div>
+      <p class="nav__powered">
+        Powered by <strong>Zuporta&nbsp;Connect™</strong><br>
+        <a href="https://zuporta.com" target="_blank" rel="noopener noreferrer">A Zuporta product · zuporta.com</a>
+      </p>
+    </div>
+  </aside>
+
+  <!-- ───────────────────────── main column ───────────────────────── -->
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn topbar__menu" id="menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-menu"/></svg>
+      </button>
+      <h1 class="topbar__title" id="view-title">Home</h1>
+      <button class="icon-btn topbar__talk" id="talk-btn-top" type="button" aria-label="Talk to a professional">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-user"/></svg>
+      </button>
+    </header>
+
+    <div class="install-banner" id="install-banner" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="install-banner__icon"><use href="#i-install"/></svg>
+      <p class="install-banner__text" id="install-banner-text">Add Zuporta+ to your home screen</p>
+      <button class="btn btn--sm" id="install-banner-btn" type="button">Install</button>
+      <button class="icon-btn install-banner__x" id="install-banner-x" type="button" aria-label="Dismiss">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </div>
+
+    <main class="view" id="view" tabindex="-1"></main>
+
+    <!-- assistant composer, only shown on the assistant view -->
+    <div class="composer-zone" id="composer-zone" hidden>
+      <form class="composer" id="composer" autocomplete="off">
+        <label class="sr-only" for="composer-input">Tell Zuporta+ what is going on</label>
+        <textarea id="composer-input" class="composer__input" rows="1" placeholder="Tell Zuporta+ what's going on…" enterkeyhint="send"></textarea>
+        <button class="send-btn" id="send-btn" type="submit" aria-label="Send message" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-send"/></svg>
+        </button>
+      </form>
+      <p class="disclaimer">
+        Zuporta offers <strong>wellness support</strong> — not diagnosis, therapy or medical care.
+        In an emergency, contact your local emergency number.
+      </p>
+    </div>
+
+    <!-- mobile tab bar -->
+    <nav class="tabbar" id="tabbar" aria-label="Primary"></nav>
+  </div>
+</div>
+
+<!-- sheet / dialog host -->
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet__scrim" data-sheet-close></div>
+  <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <div class="sheet__grab" aria-hidden="true"></div>
+    <div class="sheet__head">
+      <h2 class="sheet__title" id="sheet-title">Title</h2>
+      <button class="icon-btn" type="button" aria-label="Close" data-sheet-close>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </div>
+    <div class="sheet__body" id="sheet-body"></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="true"></div>
+
+<!-- icon sprite -->
+<svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0">
+  <symbol id="i-mark" viewBox="0 0 64 64">
+    <g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M32 10.5c-5.4 6.6-7.6 13.4-7.6 18.1 0 2.6.6 4.6 1.2 5.9h12.8c.6-1.3 1.2-3.3 1.2-5.9 0-4.7-2.2-11.5-7.6-18.1Z"/>
+      <path d="M30.6 34.2C22.9 30.9 18.7 24.6 18 16.8c6.4 3.6 10.8 9.5 12.6 17.4Z"/>
+      <path d="M33.4 34.2C41.1 30.9 45.3 24.6 46 16.8c-6.4 3.6-10.8 9.5-12.6 17.4Z"/>
+      <path d="M29.2 35.1C21.3 36 13.9 32.9 8.6 26.2c7.1 0 14 3 20.6 8.9Z"/>
+      <path d="M34.8 35.1C42.7 36 50.1 32.9 55.4 26.2c-7.1 0-14 3-20.6 8.9Z"/>
+    </g>
+    <g fill="currentColor">
+      <path d="M4 46.6c9.2-3 18.6-4.1 28.2-3.4-9.3 2-18.7 3.2-28.2 3.4Z"/>
+      <path d="M13.6 50.4c15-1.2 29.4-6.9 43.6-16.9-8.9 13-23.4 19.4-43.6 16.9Z"/>
+      <path d="M18.2 55.2c12.4-1.6 23.1-7 32.2-16.2-6.5 12-17.3 17.4-32.2 16.2Z"/>
+      <path d="M24.4 59c8.5-1.9 15.4-6.4 20.8-13.4-3.9 9.2-10.8 13.7-20.8 13.4Z"/>
+    </g>
+  </symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4 8.5 8.5 0 1 0 20 14.3Z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.5 1.5m11.2 11.2 1.5 1.5M19.1 4.9l-1.5 1.5M6.4 17.6l-1.5 1.5"/></symbol>
+  <symbol id="i-install" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M5 19h14"/></symbol>
+  <symbol id="i-share-ios" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m-3.5 3.5L12 3l3.5 3.5"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5a6 6 0 0 1 12 0"/><path d="M16.2 5.3a3.2 3.2 0 0 1 0 5.5M17.5 14.2a6 6 0 0 1 3.5 5.3"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></symbol>
+  <symbol id="i-clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V6H9Z"/><path d="M8.5 11h7M8.5 15h4"/></symbol>
+  <symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3.5l2.5-7 4 14 2.5-7H21"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="m15 9-2 4.2L8.8 15l2-4.2Z"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m4 10 8-6 8 6v9a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1Z"/></symbol>
+  <symbol id="i-wind" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10a3 3 0 1 0-3-3M3 16h13a3 3 0 1 1-3 3M3 12h17"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5Z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-9.3A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7 2.7C19 15.6 12 20 12 20Z"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9Z"/><path d="M18.5 16.5 19 18l1.5.5-1.5.5-.5 1.5-.5-1.5L16.5 18l1.5-.5Z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M9 3v4m6-4v4"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5.2l3.2 2"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 5 6v5.5c0 4.3 2.9 7.7 7 9 4.1-1.3 7-4.7 7-9V6Z"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 8 4.5-8 4.5-8-4.5Z"/><path d="m4 12.5 8 4.5 8-4.5"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="12" height="12" rx="2.5"/><path d="m15 11 5.5-3v8L15 13Z"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="10" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 3.5v-3.5A2.5 2.5 0 0 1 4 13.5Z"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18.5" cy="12" r="1.4"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10" width="15" height="10" rx="2.5"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M10 7V5h4v2m-7 0 .8 12.1a1 1 0 0 0 1 .9h6.4a1 1 0 0 0 1-.9L17 7"/></symbol>
+</svg>
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>
