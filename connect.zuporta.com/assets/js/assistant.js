@@ -13,7 +13,7 @@
    are the seam where Zuporta Connect™ would sit.
    ============================================================ */
 
-import { activityFor, topicLabel, matchPros, CONTEXTS, COPING } from './data.js';
+import { ACTIVITIES, activityFor, topicLabel, matchPros, CONTEXTS, COPING } from './data.js';
 
 /* ---------- block helpers ---------- */
 
@@ -220,7 +220,8 @@ export function respondToAction(action, payload, session) {
     case 'context': {
       session.context = payload;
       session.step = 'activity';
-      const act = activityFor(topic);
+      const act = ACTIVITIES[session.activityId] || activityFor(topic);
+      session.activityId = act.id;
       return [
         p('Thank you. Let us try something short and structured.'),
         p(act.intro),
@@ -269,7 +270,7 @@ export function respondToAction(action, payload, session) {
     case 'decide:save':
       session.step = 'open';
       return [
-        p('Saved to My Wellness. It will show up in your recommendations because you found it useful.'),
+        p('Saved in your device history. With personalization on, Home can suggest activities you rated helpful.'),
         quicks([
           { label: 'Talk to a professional', action: 'path:pro' },
           { label: 'Something else', action: 'restart' },

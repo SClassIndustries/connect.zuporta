@@ -114,7 +114,7 @@ export function declaredEvents() {
    ============================================================ */
 
 /** Metadata the shell can show without loading a module's code. */
-export const MANIFEST = [
+const MODULE_CATALOG = [
   { id: 'caregiver',    name: 'Caregiver Load',         icon: 'i-heart',
     tagline: 'Weekly check-ins for people caring for an adult family member',
     load: () => import('./caregiver.js') },
@@ -137,6 +137,9 @@ export const MANIFEST = [
     tagline: 'A verified directory, eligibility help, and referral follow-through',
     load: () => import('./navigator.js') },
 ];
+
+// Service modules remain in source until their integrations and content are ready.
+export const MANIFEST = MODULE_CATALOG.filter((m) => m.id === 'baseline');
 
 export const manifestById = (id) => MANIFEST.find((m) => m.id === id);
 

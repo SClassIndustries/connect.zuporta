@@ -309,11 +309,7 @@ export const FOLLOWUPS = [
   { id: '30d', label: '30 days',  ms: 30 * 24 * 60 * 60 * 1000 },
 ];
 
-/**
- * Layered consent. Agreeing to be coached is not agreeing to be
- * studied, and agreeing to one study is not a lifetime licence to
- * train models. Each layer is opt-in and independently revocable.
- */
+/** Local storage is required; activity-history personalization is optional. */
 export const CONSENT_LAYERS = [
   {
     id: 'service',
@@ -324,21 +320,7 @@ export const CONSENT_LAYERS = [
   {
     id: 'personalize',
     title: 'Personalize my support',
-    body: 'Use what has helped you before to choose what Zuporta+ offers you next.',
+    body: 'Use guided activities you have rated helpful for suggestions on Home. This stays on your device; turning it off restores the standard activity suggestion.',
   },
-  {
-    id: 'research',
-    title: 'Contribute to wellness research',
-    body: 'Include my de-identified responses in aggregate research on how people cope and recover. Withdrawable at any time.',
-  },
-  {
-    id: 'professional',
-    title: 'Share with my professional',
-    body: 'Let a coach I book see my recent check-ins so I do not have to repeat myself. Off by default.',
-  },
-  {
-    id: 'model',
-    title: 'Help improve the models',
-    body: 'Allow de-identified interaction patterns to improve future versions. Separate from research, and separate from the two above.',
-  },
+
 ];

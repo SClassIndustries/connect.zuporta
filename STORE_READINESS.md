@@ -2,9 +2,10 @@
 
 This file is the single source of truth for getting Zuporta+ into the
 Apple App Store and Google Play. A scheduled Codex session works
-through it every 2 hours: it picks the first item that is not done
-and not blocked, does the work, checks the box, and commits to
-`jet/kind-maxwell-nzz6vr`. If an item is blocked on something only the
+through it every 2 hours. It starts with the first unchecked, unblocked
+item, finishes and validates the work, checks the box, and commits to
+`jet/kind-maxwell-nzz6vr`. During an active session with the owner, continue
+through the milestone before pausing, skipping owner-dependent requirements. If an item is blocked on something only the
 owner can do, it is marked
 **BLOCKED** with the exact ask in "Needs from the owner" below, and the
 session moves on to the next milestone.
@@ -48,9 +49,9 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `BLOCKED` waitin
 - [x] Link both from Settings in the app and add them to the service worker shell.
 - [x] Remove "prototype" wording from the in-app About card.
 - [x] Remove the remaining user-visible "prototype" wording: `app.js` consent sheet, wellness view, modules panel, and booking/program/membership toasts. Retain clear sample-data and unavailable-feature disclosures.
-- [ ] Hide or finish features the app itself says are not built (the modules panel lists unavailable service capabilities). Apple rejects apps with placeholder or demo features (2.1). Record any proposed feature removal under "Needs from the owner" first.
-- [ ] The consent toggles "Contribute to wellness research" and "Help improve the models" record a choice but nothing is sent anywhere. Either remove them or build the real flow; store privacy answers must match the code.
-- [ ] Owner reviews and approves the legal text. **BLOCKED — needs owner: approve the app-specific privacy policy and terms after the public company/contact details have been sourced from zuporta.com** (see Needs from the owner #1 and Public details to source below).
+- [x] Hide unfinished service modules, programs and membership actions; remove sample professionals/history and fabricated summaries from release views. Keep Personal Baseline and finish its support actions. Restrict old routes and retain source/local records; release scope recorded in owner item #8 before changes.
+- [x] Remove inactive research, model-training and professional-sharing controls and legacy stored choices. Implement the retained local personalization switch, align privacy copy, and clear the local activity log with wellness-history deletion.
+- [ ] Owner reviews and approves the legal text. **BLOCKED — needs owner: approve the app-specific privacy policy and terms, provide the unpublished legal entity/full mailing address and actual HTTP-log retention, and resolve the published age-policy conflict** (see Needs from the owner #1 and Public details to source below).
 
 ### M2 — Native wrapper (Capacitor)
 - [ ] Add `package.json`, `capacitor.config.json` (app id `com.zuporta.plus`, web dir `connect.zuporta.com`).
@@ -99,13 +100,14 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `BLOCKED` waitin
 
 Items the automated session cannot do. Each one unblocks the milestone named.
 
-1. **Review the legal text** in `connect.zuporta.com/privacy.html` and `terms.html` after the public details below have been sourced. They are app-specific drafts written from what the code does; a lawyer or the business owner must approve them. Source the company and contact details from zuporta.com as the owner instructed; do not request those details again before checking that site. Published website terms do not establish approval of these app-specific drafts. (M1)
+1. **Finalize and approve the app legal drafts** in `connect.zuporta.com/privacy.html` and `terms.html`. Public contacts and California governing law have been sourced from zuporta.com (see `store/public-details.md`). The inspected pages do not supply a registered legal entity name or full mailing address; provide or identify those. Confirm actual app/API HTTP-log retention and the approval date. Resolve the site's age conflict: terms require 18+, while the privacy policy describes ages 13–17 with guardian consent; this app has no guardian-consent flow. Keep the remaining bracketed fields until resolved. (M1)
 2. **Apple Developer Program** membership (US$99/year) under the business name, and the **Team ID**. (M2, M4, M6)
 3. **Google Play Console** account (US$25 one-time), with identity verification completed. Organization accounts need a D-U-N-S number. (M4, M6)
 4. **Signing secrets** added to the GitHub repo (Settings → Secrets and variables → Actions). The session will list exact names when M4 starts. Never paste keys into chat. (M4)
 5. **Hosting access**: confirm where connect.zuporta.com is hosted (GoDaddy hosting or elsewhere) and how files get deployed from this repo, so `/.well-known/` files and the legal pages actually go live. (M1, M6)
-6. **Allow access to the public source site**: review and save the environment network draft adding `zuporta.com` and `www.zuporta.com`, then publish the environment. The current proxy denies HTTPS access to zuporta.com with `403 Forbidden` before reaching the website. This blocks verification of public company, contact and support details; it does not mean those details are missing from the site. (M1, M5)
+6. **Official policy/development documentation access**: the network draft now includes `capacitorjs.com`, `developer.apple.com`, `support.google.com` and `developer.android.com`, preserving access to `zuporta.com` and `www.zuporta.com`. Review/save and publish the environment to retain those additions. Initial requests for official Capacitor/Apple/Play pages were denied by the proxy; retry after the change applies. Zuporta source access now works and is no longer a blocker. (M2, M7)
 7. **Crisis numbers**: a human must verify each line in `assets/js/data.js` → `CRISIS` on the provider's own website for every country the app will be listed in. (M7)
+8. **Release scope (recorded before hiding unfinished features)**: the release UI now hides the Caregiver Load, Career Decision Sprint, Night-Shift Reset, Parent Bridge, Nurse Guidance and Support Navigation service flows; multi-day programs; membership purchase actions; sample coach profiles/history and fabricated wellness summaries; pilot-only panels and unmeasured state dimensions; and research/model/professional-sharing switches without an implemented data flow. Their source and existing local records are retained. The working local assistant, mood check-ins, real guided-session history, live coach links and Personal Baseline remain available. Owner decision needed only if any hidden service must return before launch; restoring it requires its missing content/integration and validation. (M1)
 
 ### Public details to source
 
@@ -113,7 +115,7 @@ Owner instruction (2026-10-15): use https://zuporta.com/ for the public
 company, contact, support and legal details. Retrieve these instead of
 asking the owner to repeat information already published there.
 
-- [ ] Read the site's linked legal and contact/support pages; record the exact source URLs and retrieval date, then use verified company legal name, postal address, appropriate contact email and support URL in the app drafts and store material. **BLOCKED — needs owner: apply the environment network changes in owner item #6**. The first retrieval attempt was denied by the environment proxy; no public details have been verified or copied yet.
+- [x] Read the homepage and linked privacy/terms pages, record exact source URLs and retrieval date in `store/public-details.md`, and fill verified contacts, account deletion instructions, location and governing law into the app drafts. No registered entity or full postal address was present on the inspected pages; unresolved facts and the published age conflict are tracked in owner item #1.
 - Keep bracketed placeholders for facts that cannot be verified. Do not infer a legal entity from branding, invent a support email, or copy website data-retention, account-deletion, minimum-age or jurisdiction provisions into the app policy without checking their scope and the app's behavior. Record any genuinely unresolved fact in the owner list after inspecting the source.
 
 ---
@@ -123,3 +125,5 @@ asking the owner to repeat information already published there.
 - 2026-10-14 — Audit done, roadmap written, M1 work started (legal page drafts, Settings links, "prototype" wording removed).
 - 2026-10-15 — M1: replaced all six user-visible "prototype" messages with accurate storage, sample-data and unavailable-feature copy; verified the consent sheet, wellness view, all seven module scope sheets and three toasts in Chromium (no runtime errors), plus JavaScript syntax and diff checks. Legal approval remains blocked on owner #1.
 - 2026-10-15 — Recorded the owner's instruction to source public business/support/legal details from zuporta.com; replaced repeat requests for those details with a source-retrieval task. HTTPS retrieval was blocked by the environment proxy (403); saved the two site hostnames in the network draft. No public facts or legal approvals were inferred.
+
+- 2026-10-15 — M1 implementation: hid unfinished release surfaces after recording scope, replaced sample summaries/history with device records, completed Baseline support navigation, collected explicit after ratings, migrated inactive consent choices and implemented on-device suggestions. Verified website contacts/law and documented remaining legal gaps; added repeatable browser regression checks including offline reload and deletion. M1 now has only owner-dependent legal work.

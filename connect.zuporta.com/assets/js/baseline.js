@@ -131,7 +131,7 @@ function consentStage(ctx, m) {
     'These are self-ratings, not measurements of anything clinical',
     'No diagnosis, no score about your brain, no inference about a condition',
     'Change detection is simple arithmetic, shown to you in full',
-    'Nothing is sent anywhere — it stays on this device in this prototype',
+    'Your ratings stay on this device and are not sent to anyone',
     'You will always be asked whether a detected change is real before anything is offered',
   ].forEach((t) => { const li = el('li'); li.append(ctx.icon('i-check'), document.createTextNode(t)); ul.appendChild(li); });
   c.appendChild(ul);
@@ -186,6 +186,9 @@ function dashboard(ctx, m) {
     wrap.appendChild(f);
   }
 
+  if (m.supportKind && m.supportKind !== 'none' && m.measured == null) {
+    wrap.appendChild(btn('btn', 'Record how your support went', () => { m.stage = 'measure'; ctx.commit(); }));
+  }
   if (n) wrap.appendChild(historyCard(ctx, m));
   return wrap;
 }
@@ -285,7 +288,9 @@ function checkinStage(ctx, m) {
       m.stage = 'confirm';
     } else {
       m.stage = 'landing';
-      ctx.toast('Saved. Nothing unusual against your baseline.');
+      ctx.toast(m.checkins.length < BASELINE_MIN
+        ? 'Saved. Keep checking in to establish your baseline.'
+        : 'Saved. No change reached the comparison threshold.');
     }
     ctx.commit();
   });
@@ -376,9 +381,9 @@ function supportStage(ctx, m) {
       track('baseline', 'support_accepted', { kind: id });
       if (id === 'none') { m.stage = 'landing'; ctx.toast('Fine — the trend stays visible whenever you want it.'); }
       else m.stage = 'measure';
-      if (id === 'guided') ctx.toast('Prototype — this would open a guided activity.');
-      if (id === 'coach') ctx.toast('Prototype — this would open coach matching.');
       ctx.commit();
+      if (id === 'guided') ctx.startActivityDirect('reset');
+      if (id === 'coach') ctx.go('professionals');
     }));
     c.appendChild(cta);
     wrap.appendChild(c);
@@ -392,7 +397,7 @@ function measureStage(ctx, m) {
   const { el, btn, card } = ctx;
   const wrap = el('div', 'stack');
   wrap.appendChild(ctx.section('Did that help?',
-    'Measuring after support is the part that makes the next suggestion better.'));
+    'If you have finished the activity or spoken with a professional, record how you feel. Otherwise come back after your support.'));
 
   const c = card();
   const row = el('div', 'quicks quicks--stack');
@@ -400,7 +405,6 @@ function measureStage(ctx, m) {
     row.appendChild(btn('quick' + (m.measured === score ? ' quick--picked' : ''), label, () => {
       m.measured = score;
       track('baseline', 'response_measured', { score, kind: m.supportKind });
-      ctx.onPlanSaved('baseline', { intensity: score });
       m.stage = 'landing';
       ctx.toast('Recorded against this change.');
       ctx.commit();
@@ -408,6 +412,7 @@ function measureStage(ctx, m) {
   });
   c.appendChild(row);
   wrap.appendChild(c);
+  wrap.appendChild(btn('btn btn--ghost', 'Not finished yet', () => { m.stage = 'landing'; ctx.commit(); }));
   return wrap;
 }
 
@@ -419,8 +424,7 @@ function ruleCard(ctx, m) {
   c.appendChild(el('p', 'card__k', 'How change detection works'));
   c.appendChild(el('p', 'card__body',
     `Your baseline is the average of each rating across your check-ins, excluding the most recent two. A change is flagged when the average of your last two check-ins moves at least ${DELTA.toFixed(1)} points in the unhelpful direction on the 1 to 5 scale. That is the whole rule — there is no model and nothing hidden.`));
-  c.appendChild(el('p', 'card__meta',
-    'Internally this programme is Neurobehavioral Response Intelligence. Neuroscience-based interpretation, speech analysis, cognitive testing and wearable signals are research features and are deliberately not in this product.'));
+  c.appendChild(el('p', 'card__meta', 'This is a comparison of your self-ratings, not clinical screening or interpretation.'));
   return c;
 }
 

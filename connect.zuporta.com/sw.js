@@ -17,7 +17,7 @@
    coupled to the markup.
    ============================================================ */
 
-const VERSION = 'zuporta-v10';
+const VERSION = 'zuporta-v11';
 
 const SHELL = [
   './',
