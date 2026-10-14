@@ -17,7 +17,7 @@
   :root { --bg:#ffffff; --fg:#10202e; --muted:#56697b; --accent:#2c63a8; --rule:#e3e8ee; }
   @media (prefers-color-scheme: dark) { :root { --bg:#0f1720; --fg:#e8eef4; --muted:#9fb0c0; --accent:#7fb0ee; --rule:#24313e; } }
   body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.6 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif; }
-  main { max-width:720px; margin:0 auto; padding:24px 16px 64px; }
+  main { max-width:720px; margin:0 auto; padding:calc(24px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(64px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left)); }
   h1 { font-size:1.75rem; line-height:1.25; margin:8px 0 4px; }
   h2 { font-size:1.15rem; margin:32px 0 8px; }
   p, li { color:var(--fg); }
@@ -53,6 +53,7 @@
       <tr><td>Your privacy choices (see below)</td><td>So the app remembers what you agreed to.</td></tr>
       <tr><td>A local log of which screens and features you used</td><td>To show you your own activity. It stays on the device.</td></tr>
       <tr><td>Light or dark theme</td><td>To remember your display preference.</td></tr>
+      <tr><td>Optional daily reminder time and breathing haptics preference (native app)</td><td>To schedule a generic local notification and control exercise feedback. The operating system also stores the notification schedule.</td></tr>
       <tr><td>A cached copy of the app and of the public coach list</td><td>So the app opens quickly and works offline.</td></tr>
     </tbody>
   </table>
@@ -67,6 +68,8 @@
   <h2>Your privacy choices</h2>
   <p>Optional <strong>Personalize my support</strong> uses guided activities you rated helpful to suggest an activity on Home. It is off until you choose to enable it, works only on your device, and can be turned off in <em>Settings → Manage permissions</em>. With it off, Home suggests a standard activity. You can continue using the app either way.</p>
   <p>The app does not offer research, model-training or professional-sharing permissions because it does not send your wellness entries for those purposes. Choices recorded by older versions for these unavailable features are discarded when the app loads; your wellness records are retained.</p>
+  <p>In the iPhone and Android app, daily reminders are off by default. Enabling a reminder in Settings requests notification permission. You choose the local time and can turn it off there; device settings may delay or block delivery. Notifications contain generic text, never your name, answers or wellness history. Haptic feedback during breathing can also be turned off in Settings. Reminders and haptics do not send data to us.</p>
+  <p><strong>Share exercise</strong> opens your device's share sheet (or copies the instructions in a browser without sharing support). Only public exercise instructions are included, never your entries. If you choose a recipient or service, it receives the instructions under its own privacy policy.</p>
 
   <h2>Health information</h2>
   <p>Wellness check-ins can reveal things about your health. Zuporta+ is a wellness tool, not a medical service, and does not diagnose or treat any condition. Because your entries stay on your device, we do not hold your health information.</p>
@@ -76,7 +79,7 @@
 
   <h2>Deleting your information</h2>
   <ul>
-    <li><strong>In the app:</strong> Settings → My Data → Delete My Wellness History removes check-ins, conversations, guided activity records, module and baseline history, follow-ups, the local activity log and privacy choices. It keeps your chosen name, display theme and cached public coach directory. To remove all site data, use your browser’s site-data controls.</li>
+    <li><strong>In the app:</strong> Settings → My Data → Delete My Wellness History removes check-ins, conversations, guided activity records, module and baseline history, follow-ups, the local activity log and privacy choices. It keeps your chosen name, display theme, reminder/haptics preferences and cached public coach directory. Turn off a scheduled reminder separately in Settings. To remove all site data, use your browser’s site-data controls.</li>
     <li><strong>Uninstalling</strong> the app, or clearing site data in your browser, also removes it.</li>
     <li>If you have a zuporta.com account, the published <a href="https://zuporta.com/privacy#your-rights">account data access and deletion instructions</a> direct requests to <a href="mailto:privacy@zuporta.com">privacy@zuporta.com</a>. Deleting local wellness history does not delete your website account.</li>
   </ul>

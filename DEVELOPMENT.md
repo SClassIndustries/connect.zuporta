@@ -6,8 +6,10 @@ work belongs on `jet/kind-maxwell-nzz6vr`; never push main or merge PR #1.
 
 ## Web and browser checks
 
-The PWA is in `connect.zuporta.com/`. It uses vanilla ES modules with no web
-bundler or server-side database. Node 24.19.0 is pinned in `.nvmrc` (Capacitor
+The PWA is in `connect.zuporta.com/`. It uses vanilla ES modules and no
+server-side database. A small native SDK adapter in `src/native.mjs` is bundled
+locally with pinned esbuild into `assets/js/native.js`; no CDN is needed.
+Node 24.19.0 is pinned in `.nvmrc` (Capacitor
 requires Node 22+); Python 3 and Chromium support local web validation.
 
 ```sh
@@ -16,10 +18,17 @@ python3 -m pip install -r tests/requirements.txt
 npm start
 ```
 
-Use a local HTTP request and `npm run test:ui` in another terminal to verify
+Run `npm run build:native` after changing `src/` or native SDK dependencies.
+The generated adapter is committed so a static web host can serve the PWA.
+`npm run sync` (including the platform-specific variants) rebuilds it before
+copying assets. `npm test` verifies logic and bundle/source consistency.
+
+Use a local HTTP request, `npm run test:ui` and `npm run test:native-ui` in another terminal to verify
 rendered interactions, persistence and offline behavior. See `tests/README.md`
 for Chromium path overrides. API success in the regression suite uses an
 explicitly synthetic response; it does not establish production API health.
+Native integration scenarios use a mocked Capacitor bridge with the actual
+SDK bundle, not real OS notifications, haptics, share sheets or device insets.
 
 ## Native wrapper
 
@@ -34,6 +43,23 @@ After changing web assets or plugins, run:
 ```sh
 npm run sync
 ```
+
+Daily reminders are off by default and request permission only on enable.
+Settings stores a device-local time; launch/resume reconciles a single daily
+calendar notification, without an exact alarm or idle-mode exemption. Device
+settings, Doze and timezone changes while the app is closed may delay delivery;
+test reboot, timezone/DST and permission changes on hardware in M7. Reminder
+and haptics preferences are separate from wellness-history deletion.
+
+Core Capacitor SystemBars manages Android insets (`native` mode handles old
+WebViews with padding and new ones through CSS safe-area values) and system
+bar contrast on both platforms. The CSS consumes top/bottom/side insets; iOS
+automatic scroll insets are disabled to avoid doubling them. Physical-device
+cutout, keyboard, navigation mode and rotation checks remain required.
+
+HTTPS account/booking links open Capacitor Browser (Custom Tabs / Safari view).
+No app sign-in token or payment is handled in the local WebView. Phone, SMS and
+email schemes retain Capacitor's OS handling; local legal pages stay local.
 
 Generated web copies in native projects are ignored. Commit application
 source and native project configuration, not build output or machine-specific

@@ -1,6 +1,6 @@
 /* ============================================================
    Zuporta+ — app shell, router and views.
-   Vanilla ES modules, no framework, no build step.
+   Vanilla ES modules; native SDK adapter is bundled locally.
    Everything a member enters stays in localStorage on the device.
    ============================================================ */
 
@@ -18,6 +18,7 @@ import {
 import {
   fetchPros, cachedPros, matchLivePros, SIGN_IN_URL, SIGN_UP_URL, COACHES_URL,
 } from './zuporta-api.js';
+import { device, externalURL } from './native.js';
 
 /* ---------- helpers ---------- */
 
@@ -47,6 +48,8 @@ const btn = (cls, label, onClick) => {
 const uid = () => Math.random().toString(36).slice(2, 10);
 const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const breathingSessions = new Set();
+const stopBreathing = () => { breathingSessions.forEach((stop) => stop()); breathingSessions.clear(); };
 
 /* ---------- state ---------- */
 
@@ -149,6 +152,7 @@ window.addEventListener('hashchange', () => {
    ============================================================ */
 
 function render() {
+  stopBreathing();
   // Verticals route at #/m/<id> and render themselves inside the shell.
   const mod = view.startsWith('m/') ? moduleById(view.slice(2)) : null;
   const meta = view.startsWith('m/') ? manifestById(view.slice(2)) : null;
@@ -650,8 +654,21 @@ function activityWidget(b) {
   nav.append(back, nextB);
   c.appendChild(nav);
 
+  const share = btn('btn btn--ghost btn--sm', 'Share exercise', async () => {
+    share.disabled = true;
+    try {
+      const result = await device.shareExercise(act0);
+      if (result === 'copied') toast('Exercise copied. Your wellness history is not included.');
+      else if (result === 'unavailable') toast('Sharing is unavailable in this browser.');
+    } catch { toast('Could not share the exercise. Please try again.'); }
+    finally { share.disabled = false; }
+  });
+  c.append(share, el('p', 'wcard__meta', 'Shares only the exercise instructions, never your answers or history.'));
+
   let idx = 0;
+  let stopStep = () => {};
   function show(n) {
+    stopStep();
     idx = Math.max(0, Math.min(act0.steps.length - 1, n));
     const s = act0.steps[idx];
     stepT.textContent = `${idx + 1}. ${s.title}`;
@@ -660,9 +677,14 @@ function activityWidget(b) {
     back.disabled = idx === 0;
     nextB.textContent = idx === act0.steps.length - 1 ? 'Finish' : 'Next';
     breathHost.replaceChildren();
-    if (s.breathe) breathHost.appendChild(breathe());
+    if (s.breathe) {
+      const breathing = breathe();
+      breathHost.appendChild(breathing.node);
+      stopStep = breathing.stop;
+    }
   }
   function finish() {
+    stopStep();
     if (b.answered) return;
     b.answered = true; save();
     nav.replaceChildren(el('p', 'astep__done', 'Activity complete'));
@@ -684,25 +706,32 @@ function breathe() {
   ring.appendChild(word);
   const b = btn('btn btn--ghost btn--sm', 'Start', () => {
     if (running) { stop(); return; }
+    breathingSessions.add(stop);
     running = true; b.textContent = 'Stop'; run(1);
   });
   let timers = []; let running = false;
   const stop = () => {
     running = false; timers.forEach(clearTimeout); timers = [];
+    breathingSessions.delete(stop);
     ring.removeAttribute('data-phase'); word.textContent = 'Ready'; b.textContent = 'Start';
   };
   const run = (round) => {
-    if (round > 5) { word.textContent = 'Done'; b.textContent = 'Again'; running = false; ring.removeAttribute('data-phase'); return; }
+    if (round > 5) { word.textContent = 'Done'; b.textContent = 'Again'; running = false; timers = []; breathingSessions.delete(stop); ring.removeAttribute('data-phase'); return; }
     const phases = [['in', 'Breathe in', 4000], ['out', 'Breathe out', 6000]];
     let t = 0;
     phases.forEach(([phase, label, ms]) => {
-      timers.push(setTimeout(() => { if (!running) return; ring.dataset.phase = phase; word.textContent = label; }, t));
+      timers.push(setTimeout(() => {
+        if (!running) return;
+        if (!wrap.isConnected || document.hidden) { stop(); return; }
+        ring.dataset.phase = phase; word.textContent = label;
+        device.breatheStep();
+      }, t));
       t += ms;
     });
     timers.push(setTimeout(() => { if (running) run(round + 1); }, t));
   };
   wrap.append(ring, b);
-  return wrap;
+  return { node: wrap, stop };
 }
 
 /* Step 3 — Reassess */
@@ -1212,6 +1241,65 @@ function viewSettings() {
   const wrap = el('div', 'stack');
   wrap.appendChild(section('Settings'));
 
+  const reminder = card();
+  reminder.append(el('p', 'card__k', 'Daily check-in reminder'));
+  if (device.native) {
+    const preference = device.reminders.get();
+    reminder.appendChild(el('p', 'card__body',
+      'Optional and off by default. A generic notification invites you to open Zuporta+; it never shows your wellness entries. Your device may delay delivery.'));
+    const field = el('label', 'field');
+    const time = el('input', 'field__input');
+    time.type = 'time'; time.value = preference.time; time.required = true;
+    const label = el('span', 'field__label', 'Reminder time (device local time)');
+    field.append(label, time);
+    const status = el('p', 'card__body', preference.enabled ? `On · daily at ${preference.time}` : 'Off');
+    status.setAttribute('role', 'status');
+    status.dataset.reminderStatus = 'true';
+    const apply = async (enabled, button) => {
+      if (enabled && !time.reportValidity()) return;
+      actions.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+      time.disabled = true;
+      button.textContent = 'Updating…';
+      try {
+        const result = await device.reminders.set(enabled, enabled ? time.value : preference.time);
+        toast(result.enabled ? 'Daily reminder enabled.' : 'Daily reminder turned off.');
+        if (view === 'settings') render();
+      } catch (error) {
+        const message = error.message || 'Could not update your reminder. Please try again.';
+        if (view === 'settings') {
+          render();
+          const current = $('[data-reminder-status]', viewEl);
+          current.textContent += ' · ' + message;
+        } else toast(message);
+      }
+    };
+    const actions = el('div', 'card__cta');
+    const enable = btn('btn btn--sm', preference.enabled ? 'Save reminder time' : 'Enable daily reminder', () => apply(true, enable));
+    actions.appendChild(enable);
+    if (preference.enabled) {
+      const off = btn('btn btn--ghost btn--sm', 'Turn off reminder', () => apply(false, off));
+      actions.appendChild(off);
+    }
+    reminder.append(field, status, actions);
+  } else {
+    reminder.appendChild(el('p', 'card__body', 'Daily device reminders are available in the iPhone and Android app. This web app does not request notification permission.'));
+  }
+  wrap.appendChild(reminder);
+
+  if (device.native) {
+    const feedback = card();
+    feedback.append(el('p', 'card__k', 'Breathing haptics'),
+      el('p', 'card__body', 'A light tap marks each inhale and exhale while a breathing exercise is running.'));
+    const toggle = btn('btn btn--ghost btn--sm', device.hapticsEnabled() ? 'On' : 'Off', () => {
+      try { device.setHaptics(!device.hapticsEnabled()); render(); }
+      catch { toast('Could not save your haptics preference.'); }
+    });
+    toggle.setAttribute('aria-label', 'Breathing haptics');
+    toggle.setAttribute('aria-pressed', String(device.hapticsEnabled()));
+    feedback.appendChild(toggle);
+    wrap.appendChild(feedback);
+  }
+
   const c = card();
   c.appendChild(el('p', 'card__k', 'Permissions'));
   c.appendChild(el('p', 'card__body',
@@ -1370,7 +1458,9 @@ function syncThemeBtn() {
   $('#theme-label').textContent = dark ? 'Light' : 'Dark';
   themeBtn.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
   themeBtn.querySelector('use').setAttribute('href', dark ? '#i-sun' : '#i-moon');
+  device.setTheme(dark ? 'dark' : 'light');
 }
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncThemeBtn);
 themeBtn.addEventListener('click', () => {
   const next = currentTheme() === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = next;
@@ -1408,7 +1498,7 @@ function iosBrowser() {
 const isIOSSafari = () => isIOS() && iosBrowser() === 'Safari';
 
 function refreshInstallUI() {
-  if (isStandalone()) {
+  if (device.native || isStandalone()) {
     installBtn.hidden = true;
     banner.hidden = true;
     return;
@@ -1821,6 +1911,29 @@ syncThemeBtn();
 render();
 autosize();
 refreshInstallUI();
+
+document.addEventListener('visibilitychange', () => { if (document.hidden) stopBreathing(); });
+document.addEventListener('click', (event) => {
+  if (!device.native || event.defaultPrevented || event.button !== 0) return;
+  const link = event.target.closest('a[href]');
+  if (!link || !externalURL(link.href, location.origin)) return;
+  event.preventDefault();
+  device.openExternal(link.href).catch(() => toast('Could not open the browser. Check your connection and try again.'));
+});
+device.initialize({
+  onBack: () => {
+    if (!sheetEl.hidden) { closeSheet(); return true; }
+    if (navEl.classList.contains('is-open')) { closeDrawer(); return true; }
+    if (view !== 'home') { go('home'); return true; }
+    return false;
+  },
+  onCheckIn: () => { closeSheet(); closeDrawer(); go('home'); },
+  onActive: (active) => {
+    if (!active) stopBreathing();
+    else { syncThemeBtn(); if (view === 'settings') render(); }
+  },
+  onError: toast,
+});
 
 // manifest shortcuts
 const tool = new URLSearchParams(location.search).get('tool');

@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- A wellness reminder tolerates delays; do not request special alarm access. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />
+    <!-- The pinned plugin declares this but its calendar scheduling path never acquires a wake lock. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" tools:node="remove" />
     <application
         android:allowBackup="false"
         android:fullBackupContent="false"

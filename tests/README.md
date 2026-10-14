@@ -15,6 +15,8 @@ Then run:
 
 ```sh
 python3 tests/release_ui.py
+python3 tests/native_ui.py
+npm test
 ```
 
 Set `ZUPORTA_TEST_ORIGIN` if using another local port. The checks use a
@@ -28,3 +30,17 @@ retained hidden-module data, baseline change confirmation and real support
 navigation, service worker offline reload, wellness-data deletion and
 browser runtime errors. They validate the web app in Chromium; they do not
 replace native iOS/Android device QA or prove live API availability.
+
+`native_ui.py` loads the actual generated native SDK bundle against a mocked
+Capacitor bridge. Its seven scenarios cover permission denial/opt-in, daily
+time replacement/cancellation, permission revocation on resume, notification
+navigation, sheet/drawer/back priority, external browsing/failure, system-bar
+theme calls, instruction-only sharing/cancellation, breathing timer/haptic
+cleanup and deletion scope. All native calls are mocked. Real-device delivery,
+safe-area rendering, haptic hardware, browser sessions and share sheets remain
+M7 requirements. Tests never send an OS notification or contact a recipient.
+
+The Node tests use injected plugin/storage implementations to check failure
+paths and scheduling races, iOS/Web behavior and the exact generated-bundle
+contents. Run `npm run build:native` after intentional source/dependency edits;
+do not loosen the bundle assertion to pass with stale shipped JavaScript.

@@ -25,8 +25,10 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `BLOCKED` waitin
 - The in-app "assistant" is rule-based and runs on the device. No
   third-party AI service is called.
 - Crisis resources already exist (`assets/js/data.js` → `CRISIS`).
-- There is **no native wrapper**, so there is nothing a store can
-  accept yet.
+- Capacitor Android/iPhone projects now wrap the app, with native reminders,
+  haptics, sharing, system bars/back navigation and external browsing (M2/M3).
+  Android debug compilation is verified; iOS compilation, store signing and
+  the release evidence gates remain outstanding. No store build has been submitted.
 
 ### Store-review risks found in the audit
 
@@ -70,11 +72,16 @@ the required evidence when accounts and signing are available.
 - [x] iOS display name Zuporta+, portrait orientation and no unused permission strings. Initial native iOS support is iPhone (iOS 15+); PWA tablet support remains.
 
 ### M3 — Native features and Apple 4.2 readiness
-- [ ] Daily check-in reminder with `@capacitor/local-notifications` (opt-in, user picks the time, off by default).
-- [ ] Haptic feedback on breathing exercise steps with `@capacitor/haptics`.
-- [ ] Native share sheet for sharing a coping exercise with `@capacitor/share`.
-- [ ] Status bar and safe-area handling; Android back button closes sheets before leaving the app.
-- [ ] External links (zuporta.com sign-in, booking) open in the system browser / in-app browser, never inside the app's web view.
+- [x] Daily check-in reminder with `@capacitor/local-notifications` (opt-in, user picks the time, off by default). Generic local text, inexact calendar schedule, permission/error handling and cancellation; no exact-alarm access.
+- [x] Haptic feedback on breathing exercise steps with `@capacitor/haptics`; optional toggle and timer cleanup on stop, step change, background and navigation.
+- [x] Native share sheet for sharing public coping-exercise instructions with `@capacitor/share`; no wellness entries included; browser share/clipboard fallback.
+- [x] Status bar and safe-area handling through core SystemBars and CSS insets; Android back closes a sheet, then drawer, returns Home, then minimizes. Physical rendering/gestures remain M7 QA.
+- [x] External HTTPS links (zuporta.com sign-in, booking) use Capacitor Browser (Custom Tabs / Safari view), outside the app's local web view; failure feedback included. Local legal links stay local; OS phone/SMS/email handling retained.
+
+M3 implementation evidence: `store/m3-validation.md`. Android debug build/lint,
+14 logic tests, 12 PWA scenarios and 7 browser scenarios with a mocked native
+bridge pass. These are not physical-device or iOS build results, and do not
+establish Apple 4.2 approval or satisfy the M7/release gates.
 
 ### M4 — Build pipeline (GitHub Actions)
 - [ ] `android.yml`: build a debug APK on every push, and a signed release AAB when the signing secrets exist.
@@ -122,7 +129,7 @@ Items the automated session cannot do. Each one unblocks the milestone named.
 3. **Google Play Console** account (US$25 one-time), with identity verification completed. Organization accounts need a D-U-N-S number. (M4, M6)
 4. **Signing secrets** added to the GitHub repo (Settings → Secrets and variables → Actions). The session will list exact names when M4 starts. Never paste keys into chat. (M4)
 5. **Hosting access**: confirm where connect.zuporta.com is hosted (GoDaddy hosting or elsewhere) and how files get deployed from this repo, so `/.well-known/` files and the legal pages actually go live. (M1, M6)
-6. **Environment network settings**: review/save and publish the saved setup/network draft so future tasks retain it. It adds official Apple/Play/Android/Capacitor documentation plus `api.zuporta.com`, `988lifeline.org` and `www.samhsa.gov`, preserving the Zuporta site domains. Apple/Play policy pages now work and the current API requirement is verified. Requests to the production coach API and 988 provider site still receive a proxy 403, so live-backend and US-provider verification remain pending. (M2, M7)
+6. **Reusable environment setup**: review/save and publish the refreshed setup instructions in environment settings. The saved install command referenced `/zuportasystem#1`, which is absent in this machine; the replacement uses the tested repository setup scripts and includes the M3 adapter/checks. The previously published network additions are now visible: the production `/nurse?page=1` coach endpoint returned HTTPS 200 from this Linux machine, and the 988 homepage returned 200 with a normal identifying User-Agent (a default Python-agent request received 403). Native-origin backend checks and the full official US-resource review still belong in M7; no additional owner-provided crisis-resource verification is requested. (setup, M7)
 7. **Release monitoring and physical-device evidence**: provide the app-specific Sentry or Firebase/Crashlytics project binding and secure build-upload authorization, access to Android Vitals when available, and a physical test fleet/lab covering at least three devices (low-end Android, older supported iPhone, plus a third screen size/OS). These are needed for measured crash-free-session/ANR evidence, native startup profiling and real-device E2E; do not substitute Chromium/emulator results. No Sentry DSN/project or Firebase app binding is currently established in the repository. (M7)
 8. **Release scope (recorded before hiding unfinished features)**: the release UI now hides the Caregiver Load, Career Decision Sprint, Night-Shift Reset, Parent Bridge, Nurse Guidance and Support Navigation service flows; multi-day programs; membership purchase actions; sample coach profiles/history and fabricated wellness summaries; pilot-only panels and unmeasured state dimensions; and research/model/professional-sharing switches without an implemented data flow. To meet the owner's no-placeholder requirement, their source is archived outside the shipped web directory; existing local records remain retained. The working local assistant, mood check-ins, real guided-session history, live coach links and Personal Baseline remain available. For the US-only launch, remove the UK/Ireland crisis shortcut while retaining the US line and global directory. Owner decision needed only if any hidden service must return before launch; restoring it requires its missing content/integration and validation. (M1)
 
@@ -148,3 +155,5 @@ asking the owner to repeat information already published there.
 - 2026-10-15 — Owner confirmed support@zuporta.com and US-only launch, waived multi-country human crisis-resource verification, and required evidence-based release gates. Added `RELEASE_GATES.md`; production store submission/rollout remain held until build/static analysis/tests, physical-device E2E, monitoring, startup, backend, privacy and listing audits pass.
 
 - 2026-10-15 — M2: added pinned Capacitor 8.5.3 wrapper/projects, generated branded native icons/splashes, configured API 36 and iPhone portrait support, and prepared checksum-verified Android SDK/JDK tooling. Android debug build passed; Android Lint passed with template/generated-resource warnings (no errors); web regressions, native config/assets and current official Play API requirement verified. Archived unfinished/demo sources outside shipped assets and refreshed PWA install screenshots. iOS compilation, physical-device testing, monitoring and release gates remain separate outstanding work.
+
+- 2026-10-14 22:23 UTC (October 15 in Asia/Manila) — M3: implemented opt-in local daily reminders, breathing haptics/timer cleanup, public-exercise sharing, SystemBars/safe-area/back handling and external browser links. Added pinned SDKs and a reproducible local adapter bundle; removed exact-alarm/unused wake-lock permissions and aligned the privacy draft. Validated 14 logic tests, 12 PWA scenarios, 7 mocked-native browser scenarios and Android debug build/lint (0 errors, 14 warnings). Repeated cloud setup successfully and refreshed reusable instructions. Native hardware/iOS compilation and all release-evidence gates remain pending; no store submission.
