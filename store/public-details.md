@@ -1,5 +1,8 @@
 # Published Zuporta details
 
+Support email `support@zuporta.com` and US-only launch confirmed by owner on
+2026-10-15.
+
 Retrieved 2026-10-15 (Asia/Manila) from the owner's designated source,
 https://zuporta.com/. Read the rendered homepage and its linked privacy
 policy and terms. HTTPS downloads used certificate verification. No

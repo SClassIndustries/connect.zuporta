@@ -41,6 +41,15 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `BLOCKED` waitin
 
 ---
 
+## Release constraints
+
+US-only launch. Support: **support@zuporta.com** (owner-confirmed).
+`RELEASE_GATES.md` records the mandatory build, static-analysis, tests,
+physical-device E2E, monitoring, cold-start, backend, privacy, payments and
+metadata gates. Do not submit for review or release to either store until the applicable
+gates pass and the owner authorizes submission. Internal testing can collect
+the required evidence when accounts and signing are available.
+
 ## Milestones
 
 ### M1 — Roadmap, legal pages, honest copy
@@ -87,11 +96,12 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `BLOCKED` waitin
 ### M7 — Pre-submission QA
 - [ ] Accessibility pass (labels, contrast, dynamic type, screen reader).
 - [ ] Offline and airplane-mode test on both platforms.
-- [ ] Crisis resources verified against each provider's own website by a human.
+- [ ] Verify the US crisis resources against the providers' official websites. Owner waived human verification across launch countries; launch is US-only.
 - [ ] Final checklist against the current App Store Review Guidelines and Play Developer Policy.
+- [ ] Satisfy every applicable requirement in `RELEASE_GATES.md`: physical-device core E2E on at least three devices, cold start under 2 seconds on mid-range hardware, crash-free sessions at least 99.5% with no unresolved crashes/ANRs or telemetry regressions, production backend checks, privacy manifests/forms/permissions and exact store metadata parity. Browser-only evidence is insufficient.
 
 ### M8 — Submit
-- [ ] Upload to TestFlight and Play internal testing.
+- [ ] Upload to TestFlight and Play internal testing when accounts/signing are available, to collect the required device and monitoring evidence. This does not authorize production submission or rollout.
 - [ ] Submit for review on both stores. (Owner presses the final button.)
 
 ---
@@ -106,7 +116,7 @@ Items the automated session cannot do. Each one unblocks the milestone named.
 4. **Signing secrets** added to the GitHub repo (Settings → Secrets and variables → Actions). The session will list exact names when M4 starts. Never paste keys into chat. (M4)
 5. **Hosting access**: confirm where connect.zuporta.com is hosted (GoDaddy hosting or elsewhere) and how files get deployed from this repo, so `/.well-known/` files and the legal pages actually go live. (M1, M6)
 6. **Official policy/development documentation access**: the network draft now includes `capacitorjs.com`, `developer.apple.com`, `support.google.com` and `developer.android.com`, preserving access to `zuporta.com` and `www.zuporta.com`. Review/save and publish the environment to retain those additions. Initial requests for official Capacitor/Apple/Play pages were denied by the proxy; retry after the change applies. Zuporta source access now works and is no longer a blocker. (M2, M7)
-7. **Crisis numbers**: a human must verify each line in `assets/js/data.js` → `CRISIS` on the provider's own website for every country the app will be listed in. (M7)
+7. **Release monitoring and physical-device evidence**: provide the app-specific Sentry or Firebase/Crashlytics project binding and secure build-upload authorization, access to Android Vitals when available, and a physical test fleet/lab covering at least three devices (low-end Android, older supported iPhone, plus a third screen size/OS). These are needed for measured crash-free-session/ANR evidence, native startup profiling and real-device E2E; do not substitute Chromium/emulator results. No Sentry DSN/project or Firebase app binding is currently established in the repository. (M7)
 8. **Release scope (recorded before hiding unfinished features)**: the release UI now hides the Caregiver Load, Career Decision Sprint, Night-Shift Reset, Parent Bridge, Nurse Guidance and Support Navigation service flows; multi-day programs; membership purchase actions; sample coach profiles/history and fabricated wellness summaries; pilot-only panels and unmeasured state dimensions; and research/model/professional-sharing switches without an implemented data flow. Their source and existing local records are retained. The working local assistant, mood check-ins, real guided-session history, live coach links and Personal Baseline remain available. Owner decision needed only if any hidden service must return before launch; restoring it requires its missing content/integration and validation. (M1)
 
 ### Public details to source
@@ -127,3 +137,5 @@ asking the owner to repeat information already published there.
 - 2026-10-15 — Recorded the owner's instruction to source public business/support/legal details from zuporta.com; replaced repeat requests for those details with a source-retrieval task. HTTPS retrieval was blocked by the environment proxy (403); saved the two site hostnames in the network draft. No public facts or legal approvals were inferred.
 
 - 2026-10-15 — M1 implementation: hid unfinished release surfaces after recording scope, replaced sample summaries/history with device records, completed Baseline support navigation, collected explicit after ratings, migrated inactive consent choices and implemented on-device suggestions. Verified website contacts/law and documented remaining legal gaps; added repeatable browser regression checks including offline reload and deletion. M1 now has only owner-dependent legal work.
+
+- 2026-10-15 — Owner confirmed support@zuporta.com and US-only launch, waived multi-country human crisis-resource verification, and required evidence-based release gates. Added `RELEASE_GATES.md`; production store submission/rollout remain held until build/static analysis/tests, physical-device E2E, monitoring, startup, backend, privacy and listing audits pass.
