@@ -1,10 +1,11 @@
 # Zuporta+ — App Store & Google Play readiness
 
 This file is the single source of truth for getting Zuporta+ into the
-Apple App Store and Google Play. An automated Claude Code session works
-through it every 3 hours: it picks the first milestone that is not done
-and not blocked, does the work, checks the box, and pushes. If a
-milestone is blocked on something only the owner can do, it is marked
+Apple App Store and Google Play. A scheduled Codex session works
+through it every 2 hours: it picks the first item that is not done
+and not blocked, does the work, checks the box, and commits to
+`jet/kind-maxwell-nzz6vr`. If an item is blocked on something only the
+owner can do, it is marked
 **BLOCKED** with the exact ask in "Needs from the owner" below, and the
 session moves on to the next milestone.
 
@@ -46,10 +47,10 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `BLOCKED` waitin
 - [x] Draft `privacy.html` (privacy policy) and `terms.html` (terms of use), served from the same site.
 - [x] Link both from Settings in the app and add them to the service worker shell.
 - [x] Remove "prototype" wording from the in-app About card.
-- [ ] Remove the remaining user-visible "prototype" wording: `app.js` consent sheet (~line 445), wellness view (~line 1148), modules panel (~line 1843).
-- [ ] Hide or finish features the app itself says are not built (modules panel: "None of these are built"). Apple rejects apps with placeholder or demo features (2.1).
+- [x] Remove the remaining user-visible "prototype" wording: `app.js` consent sheet, wellness view, modules panel, and booking/program/membership toasts. Retain clear sample-data and unavailable-feature disclosures.
+- [ ] Hide or finish features the app itself says are not built (the modules panel lists unavailable service capabilities). Apple rejects apps with placeholder or demo features (2.1). Record any proposed feature removal under "Needs from the owner" first.
 - [ ] The consent toggles "Contribute to wellness research" and "Help improve the models" record a choice but nothing is sent anywhere. Either remove them or build the real flow; store privacy answers must match the code.
-- [ ] Owner reviews and approves the legal text (see Needs from the owner #1).
+- [ ] Owner reviews and approves the legal text. **BLOCKED — needs owner: approve the privacy policy and terms, supply the company legal name and address, and confirm the contact email** (see Needs from the owner #1).
 
 ### M2 — Native wrapper (Capacitor)
 - [ ] Add `package.json`, `capacitor.config.json` (app id `com.zuporta.plus`, web dir `connect.zuporta.com`).
@@ -111,3 +112,4 @@ Items the automated session cannot do. Each one unblocks the milestone named.
 ## Run log
 
 - 2026-10-14 — Audit done, roadmap written, M1 work started (legal page drafts, Settings links, "prototype" wording removed).
+- 2026-10-15 — M1: replaced all six user-visible "prototype" messages with accurate storage, sample-data and unavailable-feature copy; verified the consent sheet, wellness view, all seven module scope sheets and three toasts in Chromium (no runtime errors), plus JavaScript syntax and diff checks. Legal approval remains blocked on owner #1.

@@ -442,7 +442,7 @@ function openConsentSheet() {
   if (!state.consent) state.consent = { personalize: false, research: false, professional: false, model: false };
   openSheet('What you share', (body) => {
     CONSENT_LAYERS.forEach((l) => body.appendChild(consentRow(l)));
-    body.appendChild(demoNote('Withdrawing a permission stops future use. Nothing here leaves your device in this prototype.'));
+    body.appendChild(demoNote('You can change these permissions at any time. Your choices and wellness data stay on this device.'));
   });
   save();
 }
@@ -1058,7 +1058,7 @@ function proCard(pro, compact) {
     cta.appendChild(go);
   } else {
     cta.appendChild(btn('btn btn--sm', pro.availability === 'now' ? 'Connect Now' : 'Book a time',
-      () => toast('Prototype — booking and payment are not connected yet.')));
+      () => toast('This is a sample profile. Booking and payment are unavailable for sample profiles.')));
   }
   c.appendChild(cta);
   return c;
@@ -1145,7 +1145,7 @@ function viewWellness() {
   cta.appendChild(btn('btn', 'Continue My Journey', () => go('assistant')));
   wrap.appendChild(cta);
 
-  wrap.appendChild(demoNote('Illustrative personalization for this prototype. Zuporta has not yet developed a validated inference model.'));
+  wrap.appendChild(demoNote('Some summaries shown here are examples. Zuporta does not use a validated inference model.'));
   return wrap;
 }
 
@@ -1170,7 +1170,7 @@ function viewPrograms() {
     const cta = el('div', 'card__cta');
     cta.appendChild(btn('btn btn--sm', enrolled ? 'Continue' : 'Start program', () => {
       state.program = p.id; save(); render();
-      toast(enrolled ? 'Prototype — daily program content is not built yet.' : `Started ${p.name}.`);
+      toast(enrolled ? 'Daily program content is not available yet.' : `Started ${p.name}.`);
     }));
     c.appendChild(cta);
     wrap.appendChild(c);
@@ -1217,7 +1217,7 @@ function viewPlus() {
     wrap.appendChild(c);
   });
   const cta = el('div', 'stack__cta');
-  cta.appendChild(btn('btn', 'Start Zuporta+', () => toast('Prototype — plans are not purchasable yet.')));
+  cta.appendChild(btn('btn', 'Start Zuporta+', () => toast('Membership plans are not available for purchase in this app.')));
   wrap.appendChild(cta);
   wrap.appendChild(poweredNote());
   return wrap;
@@ -1840,7 +1840,7 @@ function openModuleScope(m) {
 
     const b = el('div', 'card');
     b.appendChild(el('p', 'card__k', 'Required before a paid pilot'));
-    b.appendChild(el('p', 'card__body', 'None of these are built. The prototype demonstrates the flow, not the service.'));
+    b.appendChild(el('p', 'card__body', 'The service capabilities listed below are not available. The on-device flows do not provide these services.'));
     const ol = el('ol', 'steps');
     m.pilotGaps.forEach((t) => ol.appendChild(el('li', null, t)));
     b.appendChild(ol);
