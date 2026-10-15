@@ -16,74 +16,57 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `BLOCKED` waitin
 
 ## Current owner handoff — 2026-10-16 (Asia/Manila)
 
-- Owner chose a **separate app**, not an update to the existing Zuporta
-  listings. Keep `com.zuporta.plus` for now; align the current Zuporta+
-  display name with the owner's Zuporta Connect naming before registering
-  the new store records. The existing Android package from the supplied
-  link is `com.zuporta.app`; the existing Apple listing ID is `6753316016`.
-  Neither identifies the new app or proves account access.
-- Legal entity, complete Sacramento mailing address and admin contact are
-  recorded in `store/public-details.md` and the legal drafts. Minimum age,
-  actual HTTP-log retention and explicit legal-text approval
-  remain outstanding. Supplied account email: `admin@zuporta.com` for both
-  Apple and Google. Membership, console permissions and verification have
-  not been authenticated here. Reuse existing eligible developer accounts;
-  a separate app does not itself require buying another membership.
-- Hosting is verified through the connected Vercel account: project
-  `zuporta-ai-coaches` under `eld-e0424773`, custom domain
-  `connect.zuporta.com`. Existing production was deployed via CLI and has
-  no Git commit metadata. Root `vercel.json` now prepares this checkout's
-  nested web directory for static deployment; it has not been deployed.
-  See `DEVELOPMENT.md`; no GoDaddy change is required for this existing mapping.
-- Native Android/iOS projects already exist (M2). Signing secrets and CI
-  workflows are not configured in this checkout. The cloud environment
-  reports no bound secrets or outbound identities; that does not establish
-  whether GitHub repository secrets exist.
-- Attached `Zuporta Source Code.php` is a 1,860-byte Laravel migration for
-  users, password resets and sessions, with ULID user IDs. It contains no
-  coach controllers, API routes, auth/booking implementation or deployment
-  project. Inspected as reference; never executed or applied to a database.
-- Live HTTPS directory request to `api.zuporta.com/nurse?page=1` returned
-  200 with 12 records and the expected schema. CORS responses allow `*`,
-  including requests with web and native Origin headers; this is an HTTP
-  check, not execution inside a native WebView. The public website's router
-  and coach cards use `/coaches/{id}`, corroborating the supplied ULID schema.
-  Profile links now target that coach, with directory fallback for invalid IDs.
-- A profile API request with `Accept: application/json` returned 401 without
-  a website login; the website's existing interceptor redirects 401s to
-  `/login`. The UI explains signing in there and reopening the coach link.
-  Signed-in profile rendering and session/payment completion remain unverified.
-  No admin credentials, tokens, wellness entries or database access were used.
+The requested software/release preparation is implemented. The remaining
+owner work is physical-device QA, signing/project configuration, unresolved
+legal/compliance facts and store upload. None of those is represented as a
+passed production-release gate.
 
-### Deployment in plain language
+- **Product:** Zuporta+, a separate app using `com.zuporta.plus`. Preserve
+  existing Zuporta listings (`com.zuporta.app` and Apple ID `6753316016`).
+- **Business:** Lyfemind Coaching Collective LLC, 2108 N St Suite N,
+  Sacramento, California 95816, USA. Admin/account email `admin@zuporta.com`.
+  Apple Team ID `9G5XD8GWXZ` supplied by the owner; Enrollment ID is not used
+  by these builds. Existing support/privacy contacts remain sourced separately.
+- **Implemented:** local wellness flows, native reminders/haptics/sharing,
+  system bars/back/external browsing, selected-coach links, honest cached
+  availability, cold/warm app links, optional consent-based Sentry and
+  secret-isolated Android/iPhone artifact workflows. Workflows never submit
+  to stores. Native SDK initialization waits for Sentry configuration and consent.
+- **Release materials:** `store/listing.md`, `privacy-answers.md`,
+  `review-notes.md`, `signing-setup.md`, `qa-checklist.md` and screenshot/
+  feature-graphic drafts are prepared. Drafts still need the owner's facts
+  and final signed-build/console parity check.
+- **Hosting:** existing Vercel project `zuporta-ai-coaches` under
+  `eld-e0424773`. The protected QA preview is
+  https://zuporta-ai-coaches-ljh2wm1jk-eld-e0424773.vercel.app,
+  app code commit `68e6fe98848e3230097b83d7f6e3371a6bdad1a6`.
+  Its root, `/open/coaches` rewrite and Apple association return HTTP 200;
+  the association has JSON content type. Production/domain mapping is unchanged.
+- **Evidence:** see `store/release-validation.md` for final CI/build results,
+  test scope and artifact hashes. Physical-device results, crash-free rates,
+  native cold-start measurements and real signed distribution are separate.
+- **Coach platform:** HTTPS public directory works with the expected schema.
+  Individual profiles require website sign-in; the UI explains reopening a
+  profile after sign-in. No administrator credentials or wellness entries
+  are sent to the coaching site. Authenticated booking/payment remains QA.
+- **Supplied source:** `Zuporta Source Code.php` was one Laravel migration
+  for users/sessions/reset tokens with ULID IDs, not the complete backend.
+  It was inspected and never executed/applied to a database. The public
+  website corroborates the selected-coach URL pattern.
 
-| Route | What gets published | Release path |
+### Your release path
+
+| Route | What to use | Remaining action |
 | --- | --- | --- |
-| Mobile web/PWA | The web app at the existing HTTPS address | Validate the checkout → protected Vercel preview → review the actual app/legal pages → release the tested web build. Users can open the URL and add it to their home screen. No store review is needed for the website. |
-| iPhone App Store | A signed iPhone app containing a copy of the web assets | Finish native features/QA → create a separate App Store Connect record → signed macOS/Xcode build → TestFlight → complete release gates → owner approves submission → Apple review/release. |
-| Android Google Play | A signed Android App Bundle containing a copy of the web assets | Finish native features/QA → create a separate Play app record → signed AAB → internal testing → complete release gates → owner approves submission → Google review/rollout. |
+| Web/PWA QA | Protected Vercel preview above | Test phone/browser flows. Publish finalized policy/association files with the approved web release. |
+| Android QA | Debug APK in the Android validation artifact | Install on the required physical devices and record results. |
+| Google Play upload | Signed `.aab` from the manual Android workflow | Configure the new app's upload key, finish QA/forms and upload to the new Play record. |
+| iPhone QA and upload | Signed `.ipa` from the manual iPhone workflow | Configure Apple distribution certificate/profile, use TestFlight for device QA, then upload/submit through the new App Store Connect record. |
 
-The shared web code reduces duplicated work. Store builds bundle web files;
-a Vercel deployment does not update installed store builds. New packaged
-code normally needs a new store version. Native features help demonstrate
-usefulness but never guarantee store approval. The separate app can reuse
-the existing Zuporta coach platform and developer accounts without replacing
-the owner's existing apps.
-
-### Signing handoff for M4
-
-Configure signing through protected GitHub Actions settings, never chat,
-committed files, browser code or frontend environment variables. Android
-needs an upload keystore, alias and passwords for the **new** Play app.
-iOS needs the correct Apple Team ID, new app Bundle ID, distribution
-certificate/private key, provisioning profile and App Store Connect upload
-authorization. A Mac runner is needed for iOS builds. Account emails and
-an App Store Connect API key alone do not sign an iOS app.
-
-M4 must document the exact secret/variable names its implemented workflows
-consume, restrict signing to reviewed code, and keep production submission
-separate from validation. No secret values were supplied or verified in
-this handoff, and no signing or submission was attempted.
+The shared web assets are bundled into store apps. Publishing to Vercel does
+not update installed store builds. A native code/content update normally
+needs a new store build/version. Do not merge PR #1 or release production
+until the applicable gates and owner approval are complete.
 
 ## Original audit (2026-10-14; superseded by milestone progress)
 
@@ -133,7 +116,7 @@ the required evidence when accounts and signing are available.
 - [x] Remove the remaining user-visible "prototype" wording: `app.js` consent sheet, wellness view, modules panel, and booking/program/membership toasts. Retain clear sample-data and unavailable-feature disclosures.
 - [x] Hide unfinished service modules, programs and membership actions; remove sample professionals/history and fabricated summaries from release views. Keep Personal Baseline and finish its support actions. Restrict old routes and retain source/local records; release scope recorded in owner item #8 before changes.
 - [x] Remove inactive research, model-training and professional-sharing controls and legacy stored choices. Implement the retained local personalization switch, align privacy copy, and clear the local activity log with wellness-history deletion.
-- [ ] Owner reviews and approves the legal text. **BLOCKED — needs owner: approve the app-specific privacy policy and terms, provide actual HTTP-log retention, and resolve the published age-policy conflict**. Legal entity, complete mailing address and admin contact are now supplied (see Needs from the owner #1).
+- [ ] Owner reviews and approves the legal text. **BLOCKED — needs owner: approve the app-specific privacy policy and terms, provide actual HTTP-log/Sentry retention, and resolve the published age-policy conflict**. Legal entity, complete mailing address and admin contact are now supplied (see Needs from the owner #1).
 
 ### M2 — Native wrapper (Capacitor)
 - [x] Add pinned Capacitor 8.5.3 dependencies, lockfile and `capacitor.config.json` (app id `com.zuporta.plus`, web dir `connect.zuporta.com`).
@@ -155,33 +138,33 @@ bridge pass. These are not physical-device or iOS build results, and do not
 establish Apple 4.2 approval or satisfy the M7/release gates.
 
 ### M4 — Build pipeline (GitHub Actions)
-- [ ] `android.yml`: build a debug APK on every push, and a signed release AAB when the signing secrets exist.
-- [ ] `ios.yml`: build on a macOS runner; archive and upload to TestFlight when the signing secrets exist.
-- [ ] Lint/format check for the web code.
-- [ ] Meaningful unit/integration tests and core-journey E2E checks in CI; preserve test counts and skipped/unrun results. Do not use template arithmetic tests or a zero-test run as a release gate.
+- [x] `android.yml`: validate/build debug APK and unsigned release AAB on code changes; protected manual job generates a signed AAB after signing setup. No store upload.
+- [x] `ios.yml`: Xcode 26+ macOS archive/analyzer/Swift checks; protected manual job exports a signed IPA after signing setup. Owner handles TestFlight/store upload.
+- [x] Web/source lint with pinned ESLint and syntax/safety rules.
+- [x] Meaningful assistant/coach/reminder/native-link/diagnostics tests, browser core journeys, mocked-native scenarios, real SDK consent/envelope checks, viewport/keyboard checks and package/16 KB library checks in CI. Physical devices remain separate.
 
 ### M5 — Store listing material
-- [ ] Store copy: title, subtitle/short description, full description, keywords, in `store/listing.md`.
-- [ ] Screenshots at the required sizes (iPhone 6.9", iPad 13" if iPad is supported, Android phone) and the Play feature graphic (1024×500).
-- [ ] Apple App Privacy answers and Google Play Data safety answers, in `store/privacy-answers.md`, matching what the code actually does.
-- [ ] App Review notes for Apple (how to reach every feature, why coach payments are outside IAP, crisis-resource handling).
-- [ ] Content rating questionnaire answers (IARC / Apple age rating).
+- [x] Store copy: title, subtitle/short description, full description, keywords, in `store/listing.md`.
+- [x] Listing image drafts at the required sizes (iPhone 6.9", iPad 13" if iPad is supported, Android phone) and the Play feature graphic (1024×500).
+- [x] Draft Apple App Privacy answers and Google Play Data safety answers, in `store/privacy-answers.md`, matching what the code actually does.
+- [x] App Review notes for Apple (how to reach every feature, why coach payments are outside IAP, crisis-resource handling).
+- [x] Content-rating/health questionnaire worksheet prepared; final legal age and console-generated ratings remain owner decisions.
 
-### M6 — Domain verification (GoDaddy)
-- [ ] `/.well-known/assetlinks.json` (Android App Links) — needs the release signing SHA-256 from Play Console.
-- [ ] `/.well-known/apple-app-site-association` (iOS Universal Links) — needs the Apple Team ID.
-- [ ] Confirm the hosting serves both with `Content-Type: application/json` and no redirect.
+### M6 — Domain verification on Vercel
+- [x] Android App Links native routing and association generator (`npm run links:android`) implemented. **Owner setup pending:** supply the new Play app signing certificate SHA-256 and publish the generated file; no invented fingerprint is shipped.
+- [x] Apple Universal Links association and entitlement implemented for owner Team ID `9G5XD8GWXZ`, with cold/warm action routing. Protected-preview JSON response verified; production publication and signed-device verification remain pending.
+- [x] Vercel configuration serves association files as JSON with no application redirect; Apple file verified in preview. Confirm both URLs on the final public domain after publishing the actual Play certificate file.
 
 ### M7 — Pre-submission QA
-- [ ] Accessibility pass (labels, contrast, dynamic type, screen reader).
-- [ ] Offline and airplane-mode test on both platforms.
+- [x] Automated label, viewport and keyboard/modal checks at 320/390/768px. **Owner QA pending:** contrast, dynamic type, TalkBack/VoiceOver and actual native layouts.
+- [x] Browser offline/reconnect and cached-profile checks; native assets bundled locally. **Owner QA pending:** airplane mode on both physical platforms.
 - [ ] Verify the US crisis resources against the providers' official websites. Owner waived human verification across launch countries; launch is US-only.
 - [ ] Final checklist against the current App Store Review Guidelines and Play Developer Policy.
 - [ ] Physical-device core E2E on at least three devices, including low-end Android and an older supported iPhone. **BLOCKED — needs owner: the physical test fleet/lab in owner item #7**. Browser/emulator checks do not satisfy this gate.
 - [ ] Profile cold starts under 2 seconds on mid-range physical devices using Android Studio/adb and Xcode Instruments. **BLOCKED — needs owner: physical device access in owner item #7**.
 - [ ] Configure Sentry or Crashlytics, review Android Vitals, and establish at least 99.5% crash-free sessions with no unresolved crashes/ANRs or telemetry regressions. **BLOCKED — needs owner: app-specific monitoring bindings/access in owner item #7**. Record the build, observation window and session denominator.
 - [ ] Production backend and error-state checks from actual native origins: correct HTTPS endpoints/certificates, offline/reconnect recovery, no development backend URLs or embedded credentials.
-- [ ] Privacy audit after the final SDK inventory: live policy URL, Apple privacy manifests/required-reason APIs, Data Safety/privacy labels, permission-purpose strings and contextual prompts.
+- [x] SDK/privacy implementation and draft worksheet prepared. **Owner compliance/QA pending:** live policy URL, Apple privacy manifests/required-reason APIs, Data Safety/privacy labels, permission-purpose strings and contextual prompts.
 - [ ] Payment audit: if digital goods are offered, validate configured StoreKit/Play products and purchase/restore behavior; otherwise verify no digital purchase controls are exposed and review the person-to-person payment scope.
 - [ ] Reviewer access/instructions and exact listing/screenshot/age-rating/What's New parity for the final build; apply every remaining gate in `RELEASE_GATES.md`.
 
@@ -195,13 +178,13 @@ establish Apple 4.2 approval or satisfy the M7/release gates.
 
 Items the automated session cannot do. Each one unblocks the milestone named.
 
-1. **Finalize and approve the app legal drafts** in `connect.zuporta.com/privacy.html` and `terms.html`. Entity **Lyfemind Coaching Collective LLC**, mailing address **2108 N St Suite N, Sacramento, California 95816, USA** and contact **admin@zuporta.com** are supplied. Confirm actual app/API HTTP-log retention and legal-text approval date. Resolve the site's age conflict: terms require 18+, while the privacy policy describes ages 13–17 with guardian consent; this app has no guardian-consent flow. Keep remaining bracketed fields until resolved. Published support/privacy contacts and California governing law remain sourced separately in `store/public-details.md`. (M1)
-2. **Apple account access and Team ID**: owner supplied `admin@zuporta.com`. Confirm the existing account's active Developer Program membership and permissions, and retrieve its ten-character **Team ID** from the account membership details. Create a separate app record/identifier for this release; do not use existing listing `6753316016` as the new app's identity. Do not buy another membership solely because this is a second app. (M4, M6)
+1. **Finalize and approve the app legal drafts** in `connect.zuporta.com/privacy.html` and `terms.html`. Entity **Lyfemind Coaching Collective LLC**, mailing address **2108 N St Suite N, Sacramento, California 95816, USA** and contact **admin@zuporta.com** are supplied. Confirm actual app/API HTTP-log retention, Sentry retention/IP settings and legal-text approval date. Resolve the site's age conflict: terms require 18+, while the privacy policy describes ages 13–17 with guardian consent; this app has no guardian-consent flow. Keep remaining bracketed fields until resolved. Published support/privacy contacts and California governing law remain sourced separately in `store/public-details.md`. (M1)
+2. **Apple distribution setup**: owner supplied `admin@zuporta.com` and Team ID **9G5XD8GWXZ**. Confirm active membership/permissions and configure the distribution certificate/private key and App Store profile through GitHub's protected signing environment. Create a separate app record/identifier for this release; do not use existing listing `6753316016` as the new app's identity. Do not buy another membership solely because this is a second app. (M4, M6)
 3. **Google Play account access**: owner supplied `admin@zuporta.com` under the verified-account heading. Actual console access/verification has not been authenticated here. Confirm permission to create the separate app, any console-required verification/testing, and its new Play App Signing/upload-key setup. Preserve existing package `com.zuporta.app`; current new-app package is `com.zuporta.plus`. (M4, M6)
-4. **Signing secrets** added to the GitHub repo (Settings → Secrets and variables → Actions). The session will list exact names when M4 starts. Never paste keys into chat. (M4)
-5. **Hosting confirmed; deployment verification pending**: connected Vercel project `zuporta-ai-coaches` under `eld-e0424773` serves `connect.zuporta.com`. Existing deployment is a CLI upload with no Git commit metadata. Root `vercel.json` prepares this checkout for the correct output directory; verify a protected preview before any production release and establish the intended Git/CLI release path. No additional hosting credentials need to be pasted into chat. (M1, M6)
+4. **Signing secrets**: exact names and secure setup are in `store/signing-setup.md`. Add them to the protected `mobile-signing` environment; never chat/Git. The owner manually starts signed AAB/IPA jobs after reviewing the commit. (distribution)
+5. **Hosting and protected preview confirmed; production publication pending**: connected Vercel project `zuporta-ai-coaches` under `eld-e0424773` serves `connect.zuporta.com`. Existing production is a CLI upload with no Git commit metadata. Root `vercel.json` uses the correct output directory; the exact code commit is verified in the protected preview above. Publish finalized policies/association files only with the approved web release. No additional hosting credentials need to be pasted into chat. (M1, M6)
 6. **Environment network settings**: the current environment reports the restricted policy enforced and the Zuporta/documentation/crisis domains configured. As of 2026-10-16 the public coach directory request succeeds (200), superseding its previous proxy-403 blocker. Authenticated coach profiles, native WebView/backend checks and US crisis-provider verification remain separate; the 988 request was not rechecked in this handoff. (M7)
-7. **Release monitoring and physical-device evidence**: provide the app-specific Sentry or Firebase/Crashlytics project binding and secure build-upload authorization, access to Android Vitals when available, and a physical test fleet/lab covering at least three devices (low-end Android, older supported iPhone, plus a third screen size/OS). These are needed for measured crash-free-session/ANR evidence, native startup profiling and real-device E2E; do not substitute Chromium/emulator results. No Sentry DSN/project or Firebase app binding is currently established in the repository. (M7)
+7. **Release monitoring and physical-device evidence**: Sentry integration is now implemented, off until a native build has the public `SENTRY_DSN` Actions variable and the user opts in. The owner says a Sentry account exists, but the app-specific project/DSN is not supplied.  Provide the app-specific Sentry project/DSN and any symbol-upload authorization, access to Android Vitals when available, and a physical test fleet/lab covering at least three devices (low-end Android, older supported iPhone, plus a third screen size/OS). These are needed for measured crash-free-session/ANR evidence, native startup profiling and real-device E2E; do not substitute Chromium/emulator results. No live Sentry delivery/session population has been established; the consent and SDK-envelope path is tested with a synthetic bridge. See `store/signing-setup.md`. (M7)
 8. **Release scope (recorded before hiding unfinished features)**: the release UI now hides the Caregiver Load, Career Decision Sprint, Night-Shift Reset, Parent Bridge, Nurse Guidance and Support Navigation service flows; multi-day programs; membership purchase actions; sample coach profiles/history and fabricated wellness summaries; pilot-only panels and unmeasured state dimensions; and research/model/professional-sharing switches without an implemented data flow. To meet the owner's no-placeholder requirement, their source is archived outside the shipped web directory; existing local records remain retained. The working local assistant, mood check-ins, real guided-session history, live coach links and Personal Baseline remain available. For the US-only launch, remove the UK/Ireland crisis shortcut while retaining the US line and global directory. Owner decision needed only if any hidden service must return before launch; restoring it requires its missing content/integration and validation. (M1)
 
 ### Public details to source
@@ -210,7 +193,7 @@ Owner instruction (2026-10-15): use https://zuporta.com/ for the public
 company, contact, support and legal details. Retrieve these instead of
 asking the owner to repeat information already published there.
 
-- [x] Read the homepage and linked privacy/terms pages, record exact source URLs and retrieval date in `store/public-details.md`, and fill verified contacts, account deletion instructions, location and governing law into the app drafts. No registered entity or full postal address was present on the inspected pages; unresolved facts and the published age conflict are tracked in owner item #1.
+- [x] Read the homepage and linked privacy/terms pages, record exact source URLs and retrieval date in `store/public-details.md`, and fill verified contacts, account deletion instructions, location and governing law into the app drafts. The owner has since supplied the legal entity and complete postal address; remaining approval/retention/age facts are tracked in owner item #1.
 - Keep bracketed placeholders for facts that cannot be verified. Do not infer a legal entity from branding, invent a support email, or copy website data-retention, account-deletion, minimum-age or jurisdiction provisions into the app policy without checking their scope and the app's behavior. Record any genuinely unresolved fact in the owner list after inspecting the source.
 
 ---
@@ -230,3 +213,5 @@ asking the owner to repeat information already published there.
 - 2026-10-14 22:23 UTC (October 15 in Asia/Manila) — M3: implemented opt-in local daily reminders, breathing haptics/timer cleanup, public-exercise sharing, SystemBars/safe-area/back handling and external browser links. Added pinned SDKs and a reproducible local adapter bundle; removed exact-alarm/unused wake-lock permissions and aligned the privacy draft. Validated 14 logic tests, 12 PWA scenarios, 7 mocked-native browser scenarios and Android debug build/lint (0 errors, 14 warnings). Repeated cloud setup successfully and refreshed reusable instructions. Native hardware/iOS compilation and all release-evidence gates remain pending; no store submission.
 
 - 2026-10-16 — Owner chose a separate app and supplied the legal entity, full Sacramento address and administrative/account email. Inspected the attached Laravel migration without executing it; verified live directory HTTPS/CORS responses and the public site's coach-profile route/auth requirement. Updated coach-card links with safe directory fallback and sign-in guidance, completed supplied legal fields, and prepared root static Vercel configuration. All 12 browser regression reports passed, including selected-profile links and cached reload; JavaScript syntax, JSON parsing, local HTTP routes and diff whitespace checks passed. Capacitor sync succeeded for Android and iOS. Signed-in booking, Vercel deployment, signed native builds, physical-device QA and store submissions were not performed.
+
+- 2026-10-16 — Completed the remaining software and release-material preparation; see `store/release-validation.md` for exact evidence and `store/qa-checklist.md` for owner QA. Protected preview prepared; no production deployment, merge or store submission.

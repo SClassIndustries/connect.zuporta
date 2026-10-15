@@ -52,6 +52,9 @@ actually monitored sessions when reporting stability.
    artifacts** and **iPhone artifacts** results. Resolve failures before signing.
 2. The Android validation artifact contains a debug APK for device QA, an
    **unsigned** AAB and lint reports. The unsigned AAB is not upload-ready.
+   Use test data in the development-signed APK. Moving to store signing can
+   require uninstalling it, which deletes its local records. Complete final
+   QA again on the signed release candidate.
 3. Under **Android artifacts → Run workflow**, choose the reviewed branch
    and set **signed** to true. After the signing environment review, download
    **zuporta-plus-play-upload**. Its `.aab` is the file for Play Console.

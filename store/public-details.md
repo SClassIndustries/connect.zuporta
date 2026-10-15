@@ -12,14 +12,13 @@ Support email `support@zuporta.com` and US-only launch confirmed by owner on
 - Administrative/legal contact: **admin@zuporta.com**. The owner also named
   this email for Apple and Google developer accounts. Normalize the accidental
   space in `admin@ zuporta.com`; the email does not establish console access,
-  active membership, identity verification, signing or an Apple Team ID.
+  active membership, identity verification or signing. The owner subsequently supplied Apple Team ID **9G5XD8GWXZ**; no Enrollment ID is needed for these builds.
 - This updates the app drafts' entity/contact fields. Existing published
   support and privacy contacts below are separate addresses and remain as
   sourced. No legal-text approval or approval date was explicitly established.
-- The owner chose a **separate Zuporta Connect app**, rather than an update
-  to the linked existing Zuporta apps. Current native branding is Zuporta+,
-  with identifier `com.zuporta.plus`; align the final display name/listing
-  before creating the new store records. Preserve the existing app identities.
+- The owner chose a **separate app**, then clarified the product as
+  **Zuporta+**, with identifier `com.zuporta.plus`. Prepared listing copy and
+  native display name now use Zuporta+. Preserve the existing app identities.
 
 ## Published website evidence — 2026-10-15
 

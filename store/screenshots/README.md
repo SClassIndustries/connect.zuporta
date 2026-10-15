@@ -15,3 +15,8 @@ evidence. Check parity with the signed iPhone/Android builds, visible
 platform UI and current console image requirements during QA. Replace any
 capture that differs from the actual release. No native iPad target is
 enabled; do not upload iPad screenshots or claim iPad-native support.
+
+In particular, the local-privacy capture includes browser-specific settings
+copy. Replace it with a signed-device capture before using it in a native
+store listing. The drafts are layout/copy starting points, not evidence
+that native screenshots or device QA are complete.

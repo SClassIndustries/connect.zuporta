@@ -49,7 +49,7 @@ this checkout is deployed or automatically connected to GitHub.
 
 Prepare/test a protected preview before any production promotion. The app
 legal pages remain drafts with unresolved fields and must be finalized
-before public release. The configuration added here has not been deployed.
+before public release. The configuration is verified in a protected Vercel QA preview; production is unchanged. See `STORE_READINESS.md` for the current preview and code commit.
 Store releases separately require native builds/signing and the evidence
 in `RELEASE_GATES.md`; a web deployment does not update bundled store apps.
 
@@ -144,3 +144,18 @@ available. Store identities/signing, physical-device performance and E2E,
 release monitoring and production submission are separate gates in
 `RELEASE_GATES.md`. The owner supplies missing requirements through secure
 settings and presses final submission only after the gates pass.
+
+## Release handoff
+
+`store/signing-setup.md` names every secure setting used by the manual signed
+artifact jobs. `store/qa-checklist.md` is the owner device/compliance worksheet;
+`store/release-validation.md` records current automated evidence. Store image
+drafts can be regenerated with `python3 scripts/store-screenshots.py` while
+the local server runs. No pipeline submits or rolls out a store release.
+
+`SENTRY_DSN` is an optional public Actions variable, consumed during native
+adapter builds. It is never a Sentry API token. Configuration alone does not
+enable collection: the native user must opt in under Settings. The checked-in
+web preview has no bound Sentry destination. Native SDKs are pinned; the npm
+overrides for tar/sharp/uuid remove known tooling vulnerabilities and have
+been checked through sync, native asset generation and builds.

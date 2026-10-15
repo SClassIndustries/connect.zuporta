@@ -16,6 +16,7 @@ Then run:
 ```sh
 python3 tests/release_ui.py
 python3 tests/native_ui.py
+python3 tests/release_edges.py
 npm test
 ```
 
@@ -47,3 +48,9 @@ The Node tests use injected plugin/storage implementations to check failure
 paths and scheduling races, iOS/Web behavior and the exact generated-bundle
 contents. Run `npm run build:native` after intentional source/dependency edits;
 do not loosen the bundle assertion to pass with stale shipped JavaScript.
+
+`release_edges.py` tests the three `/open/` web entry routes and the actual
+compiled Sentry JavaScript SDK through a synthetic native bridge. It checks
+consent, restrictive options, event filtering and closing on opt-out without
+sending events to a real Sentry project. It does not verify native crash
+delivery, symbolication or crash-free-session statistics.
