@@ -3,6 +3,26 @@
 Support email `support@zuporta.com` and US-only launch confirmed by owner on
 2026-10-15.
 
+## Owner-supplied details — 2026-10-16 (Asia/Manila)
+
+- Legal entity: **Lyfemind Coaching Collective LLC**.
+- Mailing address: **2108 N St Suite N, Sacramento, California 95816, USA**.
+  The owner confirmed Sacramento, Sacramento County, California in the same
+  session; USA agrees with the previously sourced public website location.
+- Administrative/legal contact: **admin@zuporta.com**. The owner also named
+  this email for Apple and Google developer accounts. Normalize the accidental
+  space in `admin@ zuporta.com`; the email does not establish console access,
+  active membership, identity verification, signing or an Apple Team ID.
+- This updates the app drafts' entity/contact fields. Existing published
+  support and privacy contacts below are separate addresses and remain as
+  sourced. No legal-text approval or approval date was explicitly established.
+- The owner chose a **separate Zuporta Connect app**, rather than an update
+  to the linked existing Zuporta apps. Current native branding is Zuporta+,
+  with identifier `com.zuporta.plus`; align the final display name/listing
+  before creating the new store records. Preserve the existing app identities.
+
+## Published website evidence — 2026-10-15
+
 Retrieved 2026-10-15 (Asia/Manila) from the owner's designated source,
 https://zuporta.com/. Read the rendered homepage and its linked privacy
 policy and terms. HTTPS downloads used certificate verification. No
@@ -21,10 +41,6 @@ accounts were created, messages sent, or legal approvals inferred.
 
 ## Facts still requiring an owner decision or operational evidence
 
-- **Legal entity and postal address:** the inspected pages identify “Zuporta”
-  and Sacramento County. They do not supply a distinct registered entity
-  name or a full mailing address. Keep `[COMPANY LEGAL NAME]` and
-  `[POSTAL ADDRESS]` until the owner supplies or identifies those details.
 - **Age conflict:** published terms (last updated November 05, 2025) say
   minimum age 18; published privacy policy (effective August 08, 2025)
   describes ages 13–17 with signed guardian consent. Do not choose between
@@ -35,8 +51,9 @@ accounts were created, messages sent, or legal approvals inferred.
   evidence or the owner establishes the actual policy.
 - **Legal approval:** published website policies do not approve the new
   app-specific draft wording or establish its approval date.
-- **Private operations:** developer accounts, Team ID, signing keys and
-  deployment access were not established by these public pages.
+- **Private operations:** public pages do not establish developer-account
+  permissions, Team ID or signing keys. Hosting has since been verified
+  through the connected Vercel account; see `../DEVELOPMENT.md`.
 
 The PWA assistant and wellness history run locally. Do not copy website
 claims about encrypted remote chat, payments, analytics or guardian

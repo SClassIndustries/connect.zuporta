@@ -16,7 +16,7 @@ import {
   MANIFEST, manifestById, ensureModule, ensureAllModules, prefetchModules,
 } from './modules.js';
 import {
-  fetchPros, cachedPros, matchLivePros, SIGN_IN_URL, SIGN_UP_URL, COACHES_URL,
+  fetchPros, cachedPros, matchLivePros, coachProfileUrl, SIGN_IN_URL, SIGN_UP_URL, COACHES_URL,
 } from './zuporta-api.js';
 import { device, externalURL } from './native.js';
 
@@ -1039,7 +1039,7 @@ function viewProfessionals() {
   wrap.appendChild(grid);
   wrap.appendChild(accountCard());
   wrap.appendChild(prosAreLive()
-    ? demoNote('Coach profiles from zuporta.com. Confirm current availability and prices on the booking site.')
+    ? demoNote('Coach profiles open on zuporta.com. Sign in there, then reopen the coach link if needed. Confirm current availability and prices on the website.')
     : demoNote('No sample profiles are substituted when the directory is unavailable.'));
   return wrap;
 }
@@ -1091,10 +1091,10 @@ function proCard(pro, compact) {
   const cta = el('div', 'card__cta');
   if (pro.live) {
     const go = el('a', 'btn btn--sm');
-    go.href = COACHES_URL;
+    go.href = coachProfileUrl(pro.id);
     go.target = '_blank';
     go.rel = 'noopener noreferrer';
-    go.textContent = pro.availability === 'now' ? 'Connect Now' : 'Book a time';
+    go.textContent = 'View coach on Zuporta';
     cta.appendChild(go);
   }
   c.appendChild(cta);

@@ -24,6 +24,13 @@ export const SIGN_IN_URL = 'https://zuporta.com/login';
 export const SIGN_UP_URL = 'https://zuporta.com/register';
 export const COACHES_URL = 'https://zuporta.com/coaches';
 
+/** The platform uses ULIDs; older or incomplete cached cards use the directory. */
+export function coachProfileUrl(id) {
+  return typeof id === 'string' && /^[0-9A-HJKMNP-TV-Z]{26}$/i.test(id)
+    ? `${COACHES_URL}/${encodeURIComponent(id)}`
+    : COACHES_URL;
+}
+
 /* ---------- mapping the platform's shape to this app's ---------- */
 
 const initialsOf = (name) => (name || '')
@@ -59,13 +66,13 @@ const money = (v) => {
  * rather than filled with a plausible-looking value.
  */
 export function toPro(c) {
-  const available = c.online === true || c.availability_status === 'available';
+  const available = c.is_busy !== true && (c.online === true || c.availability_status === 'available');
   return {
     id: c.id,
     name: c.name,
     initials: initialsOf(c.name),
     photo: c.avatar_url || null,
-    title: 'Certified Coach',
+    title: 'Coach',
     cred: c.category ? String(c.category).replace(/_/g, ' ') : '',
     focus: (c.specialities || []).slice(0, 4),
     topics: topicsFor(c),
@@ -113,11 +120,16 @@ export async function fetchPros({ pages = 2, force = false } = {}) {
   try {
     const out = [];
     for (let page = 1; page <= pages; page++) {
-      const res = await fetch(`${API}/nurse?page=${page}`, { headers: { Accept: 'application/json' } });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const json = await res.json();
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 12000);
+      let json;
+      try {
+        const res = await fetch(`${API}/nurse?page=${page}`, { headers: { Accept: 'application/json' }, signal: controller.signal });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        json = await res.json();
+      } finally { clearTimeout(timeout); }
       const items = (json && json.data && json.data.items) || [];
-      out.push(...items.map(toPro));
+      out.push(...items.filter((c) => c && c.is_active !== false && !c.is_restricted).map(toPro));
       if (!json.data.has_more_pages) break;
     }
     if (!out.length) throw new Error('empty roster');

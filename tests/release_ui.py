@@ -148,13 +148,26 @@ with sync_playwright() as p:
     fixture_context=browser.new_context(reduced_motion='reduce')
     fixture_context.route('https://api.zuporta.com/**',lambda route:route.fulfill(
         status=200,headers={'Access-Control-Allow-Origin':'*'},content_type='application/json',
-        body=json.dumps({'data':{'items':[{'id':'fixture-coach','name':'API Fixture Coach','online':True,'specialities':['Stress'],'bio':'Synthetic test fixture','price_15_min':25}],'has_more_pages':False}})))
+        body=json.dumps({'data':{'items':[
+            {'id':'01ARZ3NDEKTSV4RRFFQ69G5FAV','name':'API Fixture Coach','online':True,'specialities':['Stress'],'bio':'Synthetic test fixture','price_15_min':25},
+            {'id':'incomplete-cache-id','name':'Fallback Fixture Coach','online':True,'specialities':[],'bio':'Synthetic test fixture'}
+        ],'has_more_pages':False}})))
     fixture_page=fixture_context.new_page()
     fixture_page.on('pageerror',lambda error:errors.append(str(error)))
     fixture_page.goto(ORIGIN+'/#/professionals',wait_until='networkidle')
-    expect(fixture_page.locator('#view .pro')).to_have_count(1)
+    expect(fixture_page.locator('#view .pro')).to_have_count(2)
     expect(fixture_page.locator('#view')).to_contain_text('API Fixture Coach')
-    expect(fixture_page.get_by_role('link',name='Connect Now',exact=True)).to_have_attribute('href','https://zuporta.com/coaches')
+    profile_link=fixture_page.locator('#view .pro').filter(has_text='API Fixture Coach').get_by_role('link',name='View coach on Zuporta',exact=True)
+    expect(profile_link).to_have_attribute('href','https://zuporta.com/coaches/01ARZ3NDEKTSV4RRFFQ69G5FAV')
+    expect(profile_link).to_have_attribute('target','_blank')
+    expect(profile_link).to_have_attribute('rel','noopener noreferrer')
+    expect(fixture_page.locator('#view .pro').filter(has_text='Fallback Fixture Coach').get_by_role('link')).to_have_attribute('href','https://zuporta.com/coaches')
+    expect(fixture_page.locator('#view')).to_contain_text('Sign in there')
+    # Cache entries predate profile links. Derive the URL again after offline reload.
+    fixture_page.wait_for_function('!!navigator.serviceWorker.controller')
+    fixture_context.set_offline(True)
+    fixture_page.reload(wait_until='domcontentloaded')
+    expect(profile_link).to_have_attribute('href','https://zuporta.com/coaches/01ARZ3NDEKTSV4RRFFQ69G5FAV')
     assert not errors, errors
-    print('PASS: successful directory response renders coach data and a working booking link (mocked API)',flush=True)
+    print('PASS: directory links target the selected coach, explain sign-in, fall back for invalid IDs and survive cached reload (mocked API)',flush=True)
     browser.close()

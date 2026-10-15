@@ -18,7 +18,10 @@
     "presync:android": "npm run build:native",
     "presync:ios": "npm run build:native",
     "test": "node --test tests/*.test.mjs",
-    "test:native-ui": "python3 tests/native_ui.py"
+    "test:native-ui": "python3 tests/native_ui.py",
+    "lint": "eslint .",
+    "check:package": "node scripts/check-package.mjs",
+    "test:a11y": "python3 tests/accessibility.py"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",
@@ -33,6 +36,9 @@
   "devDependencies": {
     "@capacitor/assets": "3.0.5",
     "@capacitor/cli": "8.5.3",
-    "esbuild": "0.28.2"
-  }
+    "esbuild": "0.28.2",
+    "eslint": "10.0.3",
+    "globals": "17.4.0"
+  },
+  "type": "module"
 }

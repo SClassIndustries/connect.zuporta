@@ -1,0 +1,6 @@
+included:
+  - ios/App/App
+only_rules:
+  - force_cast
+  - force_try
+  - duplicate_imports

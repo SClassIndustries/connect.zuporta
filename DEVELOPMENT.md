@@ -30,6 +30,29 @@ explicitly synthetic response; it does not establish production API health.
 Native integration scenarios use a mocked Capacitor bridge with the actual
 SDK bundle, not real OS notifications, haptics, share sheets or device insets.
 
+### Vercel web deployment
+
+`vercel.json` at the repository root prepares this checkout as a static site:
+no install/build step, output directory `connect.zuporta.com`. Run any future
+deployment from the repository root. Only that directory is served; native
+projects, the archive and internal release documents are outside it. Hash
+routes (`/#/...`) do not require a catch-all rewrite. App assets revalidate
+so a cached script does not mask a code update.
+
+Verified hosting on 2026-10-16 (Asia/Manila): project `zuporta-ai-coaches`,
+team `eld-e0424773`, project ID `prj_f6XUGKAHWMmHyJF0IvlZdD0js8em`, team ID
+`team_ETFwWY4tc7UPVeHamgg0frfS`, custom domain `connect.zuporta.com`.
+The observed production deployment `dpl_3KL3AXzPXR4zDs2gapEBA3krf89Z`
+was uploaded by CLI and supplies no Git commit metadata. Its files use a
+different layout and include archived modules; it does not establish that
+this checkout is deployed or automatically connected to GitHub.
+
+Prepare/test a protected preview before any production promotion. The app
+legal pages remain drafts with unresolved fields and must be finalized
+before public release. The configuration added here has not been deployed.
+Store releases separately require native builds/signing and the evidence
+in `RELEASE_GATES.md`; a web deployment does not update bundled store apps.
+
 ## Native wrapper
 
 App identifier: `com.zuporta.plus`. Web directory: `connect.zuporta.com`.

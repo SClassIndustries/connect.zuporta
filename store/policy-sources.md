@@ -19,3 +19,10 @@ block generating/building the projects.
 
 Before submission, repeat the full Apple/Play audit against the exact signed
 build, US storefront, current SDK inventory, privacy forms and store copy.
+
+## Identity handoff checked 2026-10-16 (Asia/Manila)
+
+- Apple Team ID: https://developer.apple.com/help/glossary/team-id/ — a
+  ten-character membership identifier found after signing in and opening
+  Membership details. An email address or numeric store listing ID is not it.
+- Google Play app updates: https://support.google.com/googleplay/android-developer/answer/9859350 — updating an existing listing requires its package identity, appropriate signing and a higher version code. The owner chose a separate app, so preserve the old `com.zuporta.app` listing and prepare separate store records for the new project.

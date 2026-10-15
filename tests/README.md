@@ -23,6 +23,9 @@ Set `ZUPORTA_TEST_ORIGIN` if using another local port. The checks use a
 fresh mobile browser context, block the coach API for failure/offline
 scenarios, and use an explicitly synthetic API response for the directory
 success scenario. They never book a session or send messages to Zuporta.
+The success fixture also checks the selected coach's profile URL, invalid-ID
+directory fallback, external-link attributes, sign-in guidance and cached
+offline reload. Website authentication and booking are not exercised.
 
 The checks cover release route restrictions, empty states, mood history,
 actual guided activity ratings, consent migration, personalization on/off,

@@ -6,3 +6,8 @@ __pycache__/
 *.keystore
 *.p12
 *.mobileprovision
+build/
+*.ipa
+*.xcarchive/
+*.keychain-db
+*.p8
