@@ -16,8 +16,8 @@ jobs:
     timeout-minutes: 30
     env:
       SENTRY_DSN: ${{ vars.SENTRY_DSN }}
-      ANDROID_HOME: ${{ runner.temp }}/zuporta-android-sdk
-      ANDROID_USER_HOME: ${{ runner.temp }}/zuporta-android-user
+      ANDROID_HOME: /tmp/zuporta-android-sdk
+      ANDROID_USER_HOME: /tmp/zuporta-android-user
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -56,8 +56,8 @@ jobs:
     timeout-minutes: 25
     env:
       SENTRY_DSN: ${{ vars.SENTRY_DSN }}
-      ANDROID_HOME: ${{ runner.temp }}/zuporta-android-sdk
-      ANDROID_USER_HOME: ${{ runner.temp }}/zuporta-android-user
+      ANDROID_HOME: /tmp/zuporta-android-sdk
+      ANDROID_USER_HOME: /tmp/zuporta-android-user
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:

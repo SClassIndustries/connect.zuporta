@@ -68,13 +68,13 @@ jobs:
       - name: Prepare distribution signing
         run: python3 scripts/prepare-signing.py ios
         env:
-          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID || '9G5XD8GWXZ' }}
           IOS_DISTRIBUTION_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
           IOS_DISTRIBUTION_P12_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_P12_PASSWORD }}
           IOS_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
       - name: Archive and export for manual upload
         env:
-          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID || '9G5XD8GWXZ' }}
           BUILD_NUMBER: ${{ github.run_number }}
         run: |
           set -euo pipefail

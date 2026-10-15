@@ -23,7 +23,7 @@ const quicks = (items) => ({ t: 'quicks', items });
 
 /* ---------- safety + scope routing (§13) ---------- */
 
-const CRISIS_RE = /\b(kill myself|end my life|suicid\w*|take my own life|want to die|hurt myself|harm myself|self[- ]harm|overdose|no reason to live|better off without me)\b/i;
+const CRISIS_RE = /\b(kill myself|end my life|end it all|suicid\w*|take my own life|want to die|(?:do not|don't|don’t) want to live|(?:cannot|can'?t|can’t) keep myself safe|hurt myself|harm myself|self[-–— ]harm|overdose|no reason to live|better off without me)\b/i;
 
 const OUT_OF_SCOPE = [
   { kind: 'medical', re: /\b(diagnos\w*|prescri\w*|medication|dosage|antidepressant|side effects?|symptoms? of|is this cancer|chest pain|blood pressure|my doctor said)\b/i },
