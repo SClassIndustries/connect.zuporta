@@ -8,12 +8,12 @@
         Need → Understand → Guide → Measure → Learn
              → Personalize → Connect → Continue
 
-   PROTOTYPE NOTE: responses are deterministic and produced on the
+   Responses are deterministic and produced on the
    device. There is no model call. `respondToText` / `respondToAction`
    are the seam where Zuporta Connect™ would sit.
    ============================================================ */
 
-import { activityFor, topicLabel, matchPros, CONTEXTS, COPING } from './data.js';
+import { ACTIVITIES, activityFor, topicLabel, CONTEXTS, COPING } from './data.js';
 
 /* ---------- block helpers ---------- */
 
@@ -23,7 +23,7 @@ const quicks = (items) => ({ t: 'quicks', items });
 
 /* ---------- safety + scope routing (§13) ---------- */
 
-const CRISIS_RE = /\b(kill myself|end my life|suicid\w*|take my own life|want to die|hurt myself|harm myself|self[- ]harm|overdose|no reason to live|better off without me)\b/i;
+const CRISIS_RE = /\b(kill myself|end my life|end it all|suicid\w*|take my own life|want to die|(?:do not|don't|don’t) want to live|(?:cannot|can'?t|can’t) keep myself safe|hurt myself|harm myself|self[-–— ]harm|overdose|no reason to live|better off without me)\b/i;
 
 const OUT_OF_SCOPE = [
   { kind: 'medical', re: /\b(diagnos\w*|prescri\w*|medication|dosage|antidepressant|side effects?|symptoms? of|is this cancer|chest pain|blood pressure|my doctor said)\b/i },
@@ -93,7 +93,7 @@ export const PATHS = [
   { action: 'path:talk',  icon: 'i-book',   label: 'Talk It Through', sub: 'Organize what is on your mind.' },
   { action: 'path:reset', icon: 'i-wind',   label: 'Guided Reset',    sub: 'Try a short structured wellness exercise.' },
   { action: 'path:work',  icon: 'i-target', label: 'Work Through It', sub: 'Explore what is contributing and possible next steps.' },
-  { action: 'path:pro',   icon: 'i-user',   label: 'Talk to Someone', sub: 'Connect with a certified professional.' },
+  { action: 'path:pro',   icon: 'i-user',   label: 'Talk to Someone', sub: 'Find human wellness support.' },
 ];
 
 /* ---------- free-text turns ---------- */
@@ -220,7 +220,8 @@ export function respondToAction(action, payload, session) {
     case 'context': {
       session.context = payload;
       session.step = 'activity';
-      const act = activityFor(topic);
+      const act = ACTIVITIES[session.activityId] || activityFor(topic);
+      session.activityId = act.id;
       return [
         p('Thank you. Let us try something short and structured.'),
         p(act.intro),
@@ -269,7 +270,7 @@ export function respondToAction(action, payload, session) {
     case 'decide:save':
       session.step = 'open';
       return [
-        p('Saved to My Wellness. It will show up in your recommendations because you found it useful.'),
+        p('Saved in your device history. With personalization on, Home can suggest activities you rated helpful.'),
         quicks([
           { label: 'Talk to a professional', action: 'path:pro' },
           { label: 'Something else', action: 'restart' },
@@ -308,7 +309,7 @@ function decidedHelped(session) {
     choices([
       { action: 'decide:continue', icon: 'i-spark',  label: 'Continue',        sub: 'Keep going with something else.' },
       { action: 'decide:save',     icon: 'i-check',  label: 'Save for later',  sub: 'Add it to My Wellness.' },
-      { action: 'path:pro',        icon: 'i-user',   label: 'Talk with someone', sub: 'Connect with a certified professional.' },
+      { action: 'path:pro',        icon: 'i-user',   label: 'Talk with someone', sub: 'Find human wellness support.' },
     ]),
   ];
 }
@@ -373,5 +374,3 @@ function matchFocus(topic) {
     talk: 'listening, stress and personal growth',
   })[topic] || 'stress, overwhelm and personal growth';
 }
-
-export { matchPros };

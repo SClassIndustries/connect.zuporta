@@ -18,11 +18,18 @@
 
 const API = 'https://api.zuporta.com';
 const CACHE_KEY = 'zuporta.coaches.cache';
-const CACHE_TTL = 6 * 60 * 60 * 1000;   // six hours
+const CACHE_TTL = 60 * 1000; // Availability changes quickly; refresh after one minute.
 
 export const SIGN_IN_URL = 'https://zuporta.com/login';
 export const SIGN_UP_URL = 'https://zuporta.com/register';
 export const COACHES_URL = 'https://zuporta.com/coaches';
+
+/** The platform uses ULIDs; older or incomplete cached cards use the directory. */
+export function coachProfileUrl(id) {
+  return typeof id === 'string' && /^[0-9A-HJKMNP-TV-Z]{26}$/i.test(id)
+    ? `${COACHES_URL}/${encodeURIComponent(id)}`
+    : COACHES_URL;
+}
 
 /* ---------- mapping the platform's shape to this app's ---------- */
 
@@ -59,13 +66,13 @@ const money = (v) => {
  * rather than filled with a plausible-looking value.
  */
 export function toPro(c) {
-  const available = c.online === true || c.availability_status === 'available';
+  const available = c.is_busy !== true && (c.online === true || c.availability_status === 'available');
   return {
     id: c.id,
     name: c.name,
     initials: initialsOf(c.name),
     photo: c.avatar_url || null,
-    title: 'Certified Coach',
+    title: 'Coach',
     cred: c.category ? String(c.category).replace(/_/g, ' ') : '',
     focus: (c.specialities || []).slice(0, 4),
     topics: topicsFor(c),
@@ -96,8 +103,13 @@ function writeCache(pros) {
   catch (e) { /* storage unavailable */ }
 }
 
-/** Coaches from the last successful fetch, however old. */
-export const cachedPros = () => (readCache() || {}).pros || null;
+function cachedRoster(cache) {
+  if (!cache) return null;
+  return Date.now() - cache.at < CACHE_TTL ? cache.pros.map((pro) => ({ ...pro, title: 'Coach' }))
+    : cache.pros.map((pro) => ({ ...pro, availability: 'schedule', slot: 'Check availability on Zuporta' }));
+}
+/** Old cached profiles remain useful, but never retain a stale online claim. */
+export const cachedPros = () => cachedRoster(readCache());
 
 /**
  * Fetch the real coach roster.
@@ -106,18 +118,23 @@ export const cachedPros = () => (readCache() || {}).pros || null;
  * server failure it falls back to the last good cache, and only then to
  * null — so the caller can decide whether to show bundled sample data.
  */
-export async function fetchPros({ pages = 2, force = false } = {}) {
+export async function fetchPros({ pages = 10, force = false } = {}) {
   const cache = readCache();
   if (!force && cache && Date.now() - cache.at < CACHE_TTL) return cache.pros;
 
   try {
     const out = [];
     for (let page = 1; page <= pages; page++) {
-      const res = await fetch(`${API}/nurse?page=${page}`, { headers: { Accept: 'application/json' } });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const json = await res.json();
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 12000);
+      let json;
+      try {
+        const res = await fetch(`${API}/nurse?page=${page}`, { headers: { Accept: 'application/json' }, signal: controller.signal });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        json = await res.json();
+      } finally { clearTimeout(timeout); }
       const items = (json && json.data && json.data.items) || [];
-      out.push(...items.map(toPro));
+      out.push(...items.filter((c) => c && c.is_active !== false && !c.is_restricted).map(toPro));
       if (!json.data.has_more_pages) break;
     }
     if (!out.length) throw new Error('empty roster');
@@ -130,7 +147,7 @@ export async function fetchPros({ pages = 2, force = false } = {}) {
     writeCache(unique);
     return unique;
   } catch (e) {
-    return cache ? cache.pros : null;
+    return cachedRoster(cache);
   }
 }
 

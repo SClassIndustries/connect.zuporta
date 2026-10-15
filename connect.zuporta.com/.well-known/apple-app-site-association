@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "details": [{
+      "appIDs": ["9G5XD8GWXZ.com.zuporta.plus"],
+      "components": [
+        { "/": "/open/check-in" },
+        { "/": "/open/breathe" },
+        { "/": "/open/coaches" }
+      ]
+    }]
+  }
+}

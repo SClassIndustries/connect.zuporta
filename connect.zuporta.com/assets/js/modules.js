@@ -115,27 +115,9 @@ export function declaredEvents() {
 
 /** Metadata the shell can show without loading a module's code. */
 export const MANIFEST = [
-  { id: 'caregiver',    name: 'Caregiver Load',         icon: 'i-heart',
-    tagline: 'Weekly check-ins for people caring for an adult family member',
-    load: () => import('./caregiver.js') },
-  { id: 'career',       name: 'Career Decision Sprint', icon: 'i-target',
-    tagline: 'A time-boxed sprint for one career decision you keep deferring',
-    load: () => import('./career.js') },
-  { id: 'nightshift',   name: 'Night-Shift Reset',      icon: 'i-moon',
-    tagline: 'Recovery check-ins for night and rotating shift workers',
-    load: () => import('./nightshift.js') },
-  { id: 'parentbridge', name: 'Parent Bridge',          icon: 'i-users',
-    tagline: 'Check-ins for working parents, built around the work-to-home seam',
-    load: () => import('./parentbridge.js') },
-  { id: 'nurseguide',   name: 'Nurse Guidance',         icon: 'i-clipboard',
-    tagline: 'Understand your instructions and prepare questions, with a matched nurse',
-    load: () => import('./nurseguide.js') },
-  { id: 'baseline',     name: 'Personal Baseline',      icon: 'i-activity',
+  { id: 'baseline', name: 'Personal Baseline', icon: 'i-activity',
     tagline: 'Short repeated check-ins that show change against your own history',
     load: () => import('./baseline.js') },
-  { id: 'navigator',    name: 'Support Navigation',     icon: 'i-compass',
-    tagline: 'A verified directory, eligibility help, and referral follow-through',
-    load: () => import('./navigator.js') },
 ];
 
 export const manifestById = (id) => MANIFEST.find((m) => m.id === id);

@@ -1,5 +1,5 @@
 {
-  "name": "Zuporta+ — Your Personal Wellness Companion",
+  "name": "Zuporta+ \u2014 Your Personal Wellness Companion",
   "short_name": "Zuporta+",
   "description": "Personalized wellness support when you need it, with meaningful human connection when you want it. Powered by Zuporta Connect.",
   "start_url": ".",
@@ -95,14 +95,14 @@
       "sizes": "412x892",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Talking with a Zuporta AI wellness coach"
+      "label": "Guided wellness support in Zuporta+"
     },
     {
       "src": "assets/img/screenshot-wide.png",
       "sizes": "1280x800",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Zuporta AI coaches on desktop"
+      "label": "Private self-ratings with Personal Baseline"
     }
   ]
 }

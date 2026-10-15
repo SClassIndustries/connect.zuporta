@@ -1,24 +1,25 @@
 /* ============================================================
    Zuporta+ — app shell, router and views.
-   Vanilla ES modules, no framework, no build step.
+   Vanilla ES modules; native SDK adapter is bundled locally.
    Everything a member enters stays in localStorage on the device.
    ============================================================ */
 
 import {
-  TOPICS, topicLabel, PROS, proById, matchPros, ACTIVITIES, activityFor,
-  PROGRAMS, DEMO_WELLNESS, DEMO_SESSIONS, PLUS_FEATURES,
-  CONTEXTS, COPING, STATE_DIMS, FOLLOWUPS, CONSENT_LAYERS, CRISIS,
+  TOPICS, topicLabel, ACTIVITIES, activityFor,
+  CONTEXTS, COPING, FOLLOWUPS, CONSENT_LAYERS, CRISIS,
 } from './data.js';
 import {
   OPENERS, PATHS, respondToText, respondToAction, matchRationale,
 } from './assistant.js';
 import {
-  modules, moduleById, analyticsLog, declaredEvents, clearAnalytics,
+  modules, moduleById, clearAnalytics,
   MANIFEST, manifestById, ensureModule, ensureAllModules, prefetchModules,
 } from './modules.js';
 import {
-  fetchPros, cachedPros, matchLivePros, SIGN_IN_URL, SIGN_UP_URL, COACHES_URL,
+  fetchPros, cachedPros, matchLivePros, coachProfileUrl, SIGN_IN_URL, SIGN_UP_URL, COACHES_URL,
 } from './zuporta-api.js';
+import { device, externalURL } from './native.js';
+import { diagnostics } from './monitoring.js';
 
 /* ---------- helpers ---------- */
 
@@ -48,6 +49,8 @@ const btn = (cls, label, onClick) => {
 const uid = () => Math.random().toString(36).slice(2, 10);
 const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const breathingSessions = new Set();
+const stopBreathing = () => { breathingSessions.forEach((stop) => stop()); breathingSessions.clear(); };
 
 /* ---------- state ---------- */
 
@@ -57,7 +60,7 @@ const freshChat = () => ({ messages: [], session: { step: 'open', topic: null } 
 
 const defaults = () => ({
   profile: { name: '' },
-  consent: null,          // null = not asked, else { personalize, research, professional, model }
+  consent: null,          // null = not asked, else { personalize }
   events: [],             // ZHED-style records: context -> state -> intervention -> state -> behaviour
   followups: [],          // scheduled longitudinal check-backs
   chat: freshChat(),
@@ -75,9 +78,12 @@ function load() {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const loaded = Object.assign(defaults(), JSON.parse(raw));
-      // v2 stored a single boolean; carry it onto the personalize layer only.
-      if (typeof loaded.consent === 'boolean') {
-        loaded.consent = { personalize: loaded.consent, research: false, professional: false, model: false };
+      // Preserve the working preference, dropping legacy choices with no data flow.
+      if (loaded.consent != null) {
+        loaded.consent = { personalize: typeof loaded.consent === 'boolean'
+          ? loaded.consent : loaded.consent.personalize === true };
+        try { localStorage.setItem(KEY, JSON.stringify(loaded)); }
+        catch (e) { /* keep readable history when storage is full or read-only */ }
       }
       return loaded;
     }
@@ -100,7 +106,6 @@ const NAV = [
   { id: 'modules',       label: 'Modules',     icon: 'i-grid' },
   { id: 'wellness',      label: 'My Wellness', icon: 'i-target' },
   { id: 'professionals', label: 'Professionals', icon: 'i-users' },
-  { id: 'programs',      label: 'Programs',    icon: 'i-layers' },
   { id: 'sessions',      label: 'Sessions',    icon: 'i-clock' },
   { sep: true },
   { id: 'profile',       label: 'Profile',     icon: 'i-user' },
@@ -111,8 +116,8 @@ const TABS = ['home', 'assistant', 'professionals', 'wellness', 'more'];
 
 const TITLES = {
   home: 'Home', assistant: 'Zuporta+', wellness: 'My Wellness',
-  professionals: 'Professionals', programs: 'Programs', sessions: 'Sessions',
-  profile: 'Profile', settings: 'Settings', plus: 'Zuporta+', modules: 'Modules',
+  professionals: 'Professionals', sessions: 'Sessions',
+  profile: 'Profile', settings: 'Settings', modules: 'Modules',
 };
 
 let view = 'home';
@@ -122,7 +127,12 @@ const composerZone = $('#composer-zone');
 const inputEl = $('#composer-input');
 const sendBtn = $('#send-btn');
 
+function availableView(id) {
+  return Object.prototype.hasOwnProperty.call(TITLES, id) || (id.startsWith('m/') && manifestById(id.slice(2))) ? id : 'home';
+}
+
 function go(next) {
+  next = availableView(next);
   view = next;
   if (location.hash !== '#/' + next) location.hash = '#/' + next;
   render();
@@ -134,8 +144,7 @@ window.addEventListener('hashchange', () => {
   let id = location.hash.replace('#/', '') || 'home';
   // A route for a module that no longer exists — a bookmark, or an installed
   // shortcut from an earlier build — lands on Home rather than a blank shell.
-  const known = TITLES[id] || (id.startsWith('m/') && manifestById(id.slice(2)));
-  if (!known) id = 'home';
+  id = availableView(id);
   if (id !== view) { view = id; render(); }
 });
 
@@ -144,6 +153,7 @@ window.addEventListener('hashchange', () => {
    ============================================================ */
 
 function render() {
+  stopBreathing();
   // Verticals route at #/m/<id> and render themselves inside the shell.
   const mod = view.startsWith('m/') ? moduleById(view.slice(2)) : null;
   const meta = view.startsWith('m/') ? manifestById(view.slice(2)) : null;
@@ -164,8 +174,8 @@ function render() {
   }
   const build = {
     home: viewHome, assistant: viewAssistant, wellness: viewWellness,
-    professionals: viewProfessionals, programs: viewPrograms, sessions: viewSessions,
-    profile: viewProfile, settings: viewSettings, plus: viewPlus, modules: viewModules,
+    professionals: viewProfessionals, sessions: viewSessions,
+    profile: viewProfile, settings: viewSettings, modules: viewModules,
   }[view] || viewHome;
   viewEl.appendChild(build());
 }
@@ -269,7 +279,7 @@ function viewHome() {
   [
     { icon: 'i-spark', t: 'Talk to Zuporta+', d: 'Personalized wellness support, anytime.',
       cta: 'Start a conversation', run: () => go('assistant') },
-    { icon: 'i-users', t: 'Talk to a Professional', d: 'Connect with a certified wellness professional for real human support.',
+    { icon: 'i-users', t: 'Talk to a Professional', d: 'Find a Zuporta coach for human wellness support.',
       cta: 'Find someone', run: () => go('professionals') },
     { icon: 'i-target', t: 'Continue My Wellness Journey', d: 'Check in, work toward your goals, or continue where you left off.',
       cta: 'My Wellness', run: () => go('wellness') },
@@ -303,12 +313,14 @@ function viewHome() {
   const due = dueFollowup();
   if (due) wrap.appendChild(followupCard(due));
 
-  // focus
-  const focus = section('Your Focus');
+  const focus = section('Your check-ins');
   const fc = card();
-  fc.appendChild(el('p', 'card__title', DEMO_WELLNESS.focus));
-  const days = state.checkIns.length || DEMO_WELLNESS.daysThisWeek;
-  fc.appendChild(el('p', 'card__body', `You have checked in ${days} ${days === 1 ? 'day' : 'days'} this week.`));
+  const since = new Date();
+  since.setDate(since.getDate() - 6);
+  since.setHours(0, 0, 0, 0);
+  const days = new Set(state.checkIns.filter((c) => c.at >= since.getTime())
+    .map((c) => new Date(c.at).toDateString())).size;
+  fc.appendChild(el('p', 'card__body', `You have checked in on ${days} ${days === 1 ? 'day' : 'days'} in the past 7 days.`));
   const fcta = el('div', 'card__cta');
   fcta.appendChild(btn('btn btn--sm', 'Check In', () => {
     document.querySelector('.mood__btn')?.focus();
@@ -318,44 +330,21 @@ function viewHome() {
   focus.appendChild(fc);
   wrap.appendChild(focus);
 
-  // recommendation
-  const rec = section('Recommended for You');
-  const act = ACTIVITIES.reset;
+  const rec = section('Try a guided activity');
+  const previous = consented('personalize') && state.responses.find((r) =>
+    r.helpful && Object.values(ACTIVITIES).some((a) => a.name === r.activity));
+  const act = (previous && Object.values(ACTIVITIES).find((a) => a.name === previous.activity))
+    || ACTIVITIES.reset;
   const rc = card();
   rc.appendChild(el('p', 'card__title', act.name));
-  rc.appendChild(el('p', 'card__body', 'Based on activities you have found helpful.'));
+  rc.appendChild(el('p', 'card__body', previous
+    ? 'You rated this activity helpful before.'
+    : 'A short exercise you can try on this device.'));
   const rcta = el('div', 'card__cta');
   rcta.appendChild(btn('btn btn--sm', 'Start', () => startActivityDirect(act.id)));
   rc.appendChild(rcta);
   rec.appendChild(rc);
   wrap.appendChild(rec);
-
-  // someone available now
-  const avail = PROS.filter((p) => p.availability === 'now')[0];
-  if (avail) {
-    const s = section('Need someone to talk to?');
-    const c = card();
-    c.appendChild(el('p', 'card__title', `${avail.name} is available now`));
-    c.appendChild(el('p', 'card__body', avail.title));
-    const cta = el('div', 'card__cta');
-    cta.appendChild(btn('btn btn--sm', 'Talk to a Professional', () => go('professionals')));
-    c.appendChild(cta);
-    s.appendChild(c);
-    wrap.appendChild(s);
-  }
-
-  // continue a program
-  const prog = PROGRAMS.find((p) => p.id === (state.program || 'boundaries'));
-  const cont = section('Continue');
-  const pc = card();
-  pc.appendChild(el('p', 'card__title', prog.name));
-  pc.appendChild(el('p', 'card__body', `Day ${prog.day || 1} of ${prog.days}`));
-  pc.appendChild(progressBar((prog.day || 1) / prog.days));
-  const pcta = el('div', 'card__cta');
-  pcta.appendChild(btn('btn btn--sm', 'Continue', () => go('programs')));
-  pc.appendChild(pcta);
-  cont.appendChild(pc);
-  wrap.appendChild(cont);
 
   wrap.appendChild(poweredNote());
   return wrap;
@@ -403,18 +392,18 @@ function consentCard() {
   const c = card('card--accent');
   c.appendChild(el('p', 'card__title', 'Make Zuporta More Personal'));
   c.appendChild(el('p', 'card__body',
-    'Zuporta can use your check-ins and responses to personalize your support, and — separately — to contribute to wellness research. These are different permissions, and you choose each one.'));
+    'Choose whether Home suggests guided activities you have rated helpful. This happens only on your device. You can use the app with personalization off.'));
   const cta = el('div', 'card__cta');
-  cta.appendChild(btn('btn btn--sm', 'Choose what to share', openConsentSheet));
+  cta.appendChild(btn('btn btn--sm', 'Choose personalization', openConsentSheet));
   cta.appendChild(btn('btn btn--ghost btn--sm', 'Not Now', () => {
-    state.consent = { personalize: false, research: false, professional: false, model: false };
+    state.consent = { personalize: false };
     save(); render(); toast('Nothing shared. You can change this any time in Settings.');
   }));
   c.appendChild(cta);
   return c;
 }
 
-/** Each layer is independent: coaching consent is not research consent. */
+/** Only expose preferences backed by an implemented on-device behavior. */
 function consentRow(layer) {
   const row = card();
   row.appendChild(el('p', 'card__title', layer.title));
@@ -439,10 +428,10 @@ function consentRow(layer) {
 }
 
 function openConsentSheet() {
-  if (!state.consent) state.consent = { personalize: false, research: false, professional: false, model: false };
-  openSheet('What you share', (body) => {
+  if (!state.consent) state.consent = { personalize: false };
+  openSheet('Personalization and storage', (body) => {
     CONSENT_LAYERS.forEach((l) => body.appendChild(consentRow(l)));
-    body.appendChild(demoNote('Withdrawing a permission stops future use. Nothing here leaves your device in this prototype.'));
+    body.appendChild(demoNote('You can change these permissions at any time. Your choices and wellness data stay on this device.'));
   });
   save();
 }
@@ -666,8 +655,21 @@ function activityWidget(b) {
   nav.append(back, nextB);
   c.appendChild(nav);
 
+  const share = btn('btn btn--ghost btn--sm', 'Share exercise', async () => {
+    share.disabled = true;
+    try {
+      const result = await device.shareExercise(act0);
+      if (result === 'copied') toast('Exercise copied. Your wellness history is not included.');
+      else if (result === 'unavailable') toast('Sharing is unavailable in this browser.');
+    } catch { toast('Could not share the exercise. Please try again.'); }
+    finally { share.disabled = false; }
+  });
+  c.append(share, el('p', 'wcard__meta', 'Shares only the exercise instructions, never your answers or history.'));
+
   let idx = 0;
+  let stopStep = () => {};
   function show(n) {
+    stopStep();
     idx = Math.max(0, Math.min(act0.steps.length - 1, n));
     const s = act0.steps[idx];
     stepT.textContent = `${idx + 1}. ${s.title}`;
@@ -676,9 +678,14 @@ function activityWidget(b) {
     back.disabled = idx === 0;
     nextB.textContent = idx === act0.steps.length - 1 ? 'Finish' : 'Next';
     breathHost.replaceChildren();
-    if (s.breathe) breathHost.appendChild(breathe());
+    if (s.breathe) {
+      const breathing = breathe();
+      breathHost.appendChild(breathing.node);
+      stopStep = breathing.stop;
+    }
   }
   function finish() {
+    stopStep();
     if (b.answered) return;
     b.answered = true; save();
     nav.replaceChildren(el('p', 'astep__done', 'Activity complete'));
@@ -700,25 +707,32 @@ function breathe() {
   ring.appendChild(word);
   const b = btn('btn btn--ghost btn--sm', 'Start', () => {
     if (running) { stop(); return; }
+    breathingSessions.add(stop);
     running = true; b.textContent = 'Stop'; run(1);
   });
   let timers = []; let running = false;
   const stop = () => {
     running = false; timers.forEach(clearTimeout); timers = [];
+    breathingSessions.delete(stop);
     ring.removeAttribute('data-phase'); word.textContent = 'Ready'; b.textContent = 'Start';
   };
   const run = (round) => {
-    if (round > 5) { word.textContent = 'Done'; b.textContent = 'Again'; running = false; ring.removeAttribute('data-phase'); return; }
+    if (round > 5) { word.textContent = 'Done'; b.textContent = 'Again'; running = false; timers = []; breathingSessions.delete(stop); ring.removeAttribute('data-phase'); return; }
     const phases = [['in', 'Breathe in', 4000], ['out', 'Breathe out', 6000]];
     let t = 0;
     phases.forEach(([phase, label, ms]) => {
-      timers.push(setTimeout(() => { if (!running) return; ring.dataset.phase = phase; word.textContent = label; }, t));
+      timers.push(setTimeout(() => {
+        if (!running) return;
+        if (!wrap.isConnected || document.hidden) { stop(); return; }
+        ring.dataset.phase = phase; word.textContent = label;
+        device.breatheStep();
+      }, t));
       t += ms;
     });
     timers.push(setTimeout(() => { if (running) run(round + 1); }, t));
   };
   wrap.append(ring, b);
-  return wrap;
+  return { node: wrap, stop };
 }
 
 /* Step 3 — Reassess */
@@ -726,20 +740,39 @@ function reassessWidget(b) {
   const c = el('div', 'wcard');
   c.appendChild(labelRow('Response check', 'i-target'));
   c.appendChild(el('p', 'wcard__title', b.label || 'How are you feeling now?'));
+  c.appendChild(el('p', 'wcard__meta', 'Rate the intensity now: 1 = not at all; 10 = completely. Then choose how it changed.'));
+  const scoreRow = el('div', 'scale');
+  for (let n = 1; n <= 10; n++) {
+    const scoreButton = btn('scale__btn', String(n), () => {
+      if (b.answered) return;
+      b.score = n;
+      save();
+      [...scoreRow.children].forEach((button, i) => {
+        button.setAttribute('aria-pressed', String(i + 1 === n));
+        button.classList.toggle('scale__btn--picked', i + 1 === n);
+      });
+      row.hidden = false;
+    });
+    scoreButton.setAttribute('aria-label', `After: ${n} out of 10`);
+    scoreButton.setAttribute('aria-pressed', String(b.score === n));
+    scoreButton.classList.toggle('scale__btn--picked', b.score === n);
+    scoreButton.disabled = !!b.answered;
+    scoreRow.appendChild(scoreButton);
+  }
+  c.appendChild(scoreRow);
   const opts = [
-    { value: 'much', label: 'Much better', delta: -4 },
-    { value: 'little', label: 'A little better', delta: -2 },
-    { value: 'same', label: 'About the same', delta: 0 },
-    { value: 'worse', label: 'Worse', delta: 1 },
+    { value: 'much', label: 'Much better' },
+    { value: 'little', label: 'A little better' },
+    { value: 'same', label: 'About the same' },
+    { value: 'worse', label: 'Worse' },
   ];
   const row = el('div', 'quicks');
+  row.hidden = !b.score && !b.answered;
   opts.forEach((o) => {
     const x = btn('quick', o.label, () => {
       if (b.answered) return;
       b.answered = o.label; save();
-      const before = state.chat.session.before ?? 7;
-      const after = Math.max(1, Math.min(10, before + o.delta));
-      act('reassess', { value: o.value, score: after }, o.label);
+      act('reassess', { value: o.value, score: b.score }, o.label);
     });
     if (b.answered) { x.disabled = true; x.classList.toggle('quick--picked', b.answered === o.label); }
     row.appendChild(x);
@@ -787,7 +820,10 @@ function matchingWidget(b) {
     c.appendChild(el('p', 'wcard__meta', matchRationale(b.topic || 'stress')));
     const pool = prosAreLive()
       ? matchLivePros(livePros, b.topic || 'stress', 3)
-      : matchPros(b.topic || 'stress', 3);
+      : [];
+    if (!pool.length) {
+      status.textContent = 'The coach directory could not be loaded. You can browse coaches on zuporta.com.';
+    }
     pool.forEach((p) => c.appendChild(proCard(p, true)));
     const more = el('div', 'card__cta');
     more.appendChild(btn('btn btn--ghost btn--sm', 'See all professionals', () => go('professionals')));
@@ -851,10 +887,12 @@ let busy = false;
    the bundled sample list in data.js is only a fallback. */
 var livePros = cachedPros();
 var liveTried = false;
+var liveAttemptAt = 0;
 
 function ensureLivePros() {
-  if (liveTried) return;
+  if (liveTried && Date.now() - liveAttemptAt < 60000) return;
   liveTried = true;
+  liveAttemptAt = Date.now();
   fetchPros().then((pros) => {
     if (!pros || !pros.length) return;
     livePros = pros;
@@ -862,8 +900,8 @@ function ensureLivePros() {
   });
 }
 
-/** Real coaches when we have them, bundled samples otherwise. */
-const currentPros = () => (livePros && livePros.length ? livePros : PROS);
+/** Never substitute invented professionals when the directory is unavailable. */
+const currentPros = () => (livePros && livePros.length ? livePros : []);
 const prosAreLive = () => !!(livePros && livePros.length);
 
 function pushUser(text) {
@@ -983,7 +1021,7 @@ function viewProfessionals() {
   wrap.appendChild(head);
 
   const filters = el('div', 'segmented');
-  [['now', 'Available Now'], ['today', 'Available Today'], ['schedule', 'Schedule']].forEach(([id, label]) => {
+  [['now', 'Listed online'], ['today', 'Other coaches'], ['schedule', 'All coaches']].forEach(([id, label]) => {
     const b = btn('segmented__btn', label, () => { proFilter = id; render(); });
     b.setAttribute('aria-pressed', String(proFilter === id));
     filters.appendChild(b);
@@ -995,12 +1033,17 @@ function viewProfessionals() {
     .sort((a, b) => order[a.availability] - order[b.availability]);
 
   const grid = el('div', 'pro-grid');
-  (list.length ? list : currentPros()).forEach((p) => grid.appendChild(proCard(p, false)));
+  list.forEach((p) => grid.appendChild(proCard(p, false)));
+  if (!list.length) {
+    grid.appendChild(el('p', 'card__body', currentPros().length
+      ? 'No coaches match this filter. Choose All coaches to see the directory.'
+      : 'The coach directory is unavailable. Reconnect or browse coaches on zuporta.com.'));
+  }
   wrap.appendChild(grid);
   wrap.appendChild(accountCard());
   wrap.appendChild(prosAreLive()
-    ? demoNote('Live from zuporta.com — real certified coaches, their own prices and current availability.')
-    : demoNote('Showing sample profiles: the live coach list could not be reached. Reconnect to see real coaches.'));
+    ? demoNote('Coach profiles open on zuporta.com. Sign in there, then reopen the coach link if needed. Confirm current availability and prices on the website.')
+    : demoNote('No sample profiles are substituted when the directory is unavailable.'));
   return wrap;
 }
 
@@ -1051,14 +1094,11 @@ function proCard(pro, compact) {
   const cta = el('div', 'card__cta');
   if (pro.live) {
     const go = el('a', 'btn btn--sm');
-    go.href = COACHES_URL;
+    go.href = coachProfileUrl(pro.id);
     go.target = '_blank';
     go.rel = 'noopener noreferrer';
-    go.textContent = pro.availability === 'now' ? 'Connect Now' : 'Book a time';
+    go.textContent = 'View coach on Zuporta';
     cta.appendChild(go);
-  } else {
-    cta.appendChild(btn('btn btn--sm', pro.availability === 'now' ? 'Connect Now' : 'Book a time',
-      () => toast('Prototype — booking and payment are not connected yet.')));
   }
   c.appendChild(cta);
   return c;
@@ -1090,16 +1130,10 @@ function viewWellness() {
   wrap.appendChild(stateVectorCard());
   if (state.events.length) wrap.appendChild(latestEventCard());
 
-  // current focus
-  const f = card();
-  f.appendChild(el('p', 'card__k', 'Current focus'));
-  f.appendChild(el('p', 'card__title', DEMO_WELLNESS.focus));
-  wrap.appendChild(f);
-
   // recent check-ins
   const scores = state.checkIns.length
     ? state.checkIns.slice(0, 8).map((c) => c.score * 2).reverse()
-    : DEMO_WELLNESS.checkIns;
+    : [];
   const ci = card();
   ci.appendChild(el('p', 'card__k', 'Recent check-ins'));
   const spark = el('div', 'spark');
@@ -1111,6 +1145,7 @@ function viewWellness() {
     spark.appendChild(col);
   });
   ci.appendChild(spark);
+  if (!scores.length) ci.appendChild(el('p', 'card__body', 'Your mood check-ins will appear here after you check in on Home.'));
   wrap.appendChild(ci);
 
   // what has helped
@@ -1119,18 +1154,21 @@ function viewWellness() {
   const ul = el('ul', 'ticks');
   const helped = state.responses.filter((r) => r.helpful).map((r) => r.activity);
   const uniq = [...new Set(helped)].slice(0, 4);
-  (uniq.length ? uniq : DEMO_WELLNESS.helped).forEach((t) => {
+  uniq.forEach((t) => {
     const li = el('li');
     li.append(icon('i-check'), document.createTextNode(t));
     ul.appendChild(li);
   });
   h.appendChild(ul);
+  if (!uniq.length) h.appendChild(el('p', 'card__body', 'Complete a guided activity and rate how it helped to start your history.'));
   wrap.appendChild(h);
 
   // preferences + response
   const pref = card();
   pref.appendChild(el('p', 'card__k', 'Your Support Preferences'));
-  pref.appendChild(el('p', 'card__body', DEMO_WELLNESS.preference));
+  pref.appendChild(el('p', 'card__body', consented('personalize')
+    ? 'Home can suggest guided activities you have rated helpful. These suggestions stay on your device.'
+    : 'Home suggests a standard guided activity. Turn on personalization to use your helpful activity history.'));
   wrap.appendChild(pref);
 
   const resp = card();
@@ -1138,45 +1176,20 @@ function viewWellness() {
   const real = state.responses.slice(0, 5);
   resp.appendChild(el('p', 'card__body', real.length
     ? `${real.filter((r) => r.helpful).length} of your last ${real.length} guided ${real.length === 1 ? 'interaction' : 'interactions'} ${real.length === 1 ? 'was' : 'were'} rated helpful.`
-    : DEMO_WELLNESS.response));
+    : 'No guided activities recorded yet.'));
   wrap.appendChild(resp);
 
   const cta = el('div', 'stack__cta');
   cta.appendChild(btn('btn', 'Continue My Journey', () => go('assistant')));
   wrap.appendChild(cta);
 
-  wrap.appendChild(demoNote('Illustrative personalization for this prototype. Zuporta has not yet developed a validated inference model.'));
+  wrap.appendChild(demoNote('These are your own check-ins and activity ratings, stored on this device. They are not a clinical assessment.'));
   return wrap;
 }
 
 /* ============================================================
    PROGRAMS / SESSIONS / PROFILE / SETTINGS / ZUPORTA+
    ============================================================ */
-
-function viewPrograms() {
-  const wrap = el('div', 'stack');
-  wrap.appendChild(section('Programs', 'Multi-day guided experiences that build a habit rather than a one-off fix.'));
-  PROGRAMS.forEach((p) => {
-    const c = card();
-    c.appendChild(el('p', 'card__title', p.name));
-    c.appendChild(el('p', 'card__body', p.blurb));
-    const enrolled = state.program === p.id || (p.day > 0 && !state.program);
-    if (enrolled) {
-      c.appendChild(el('p', 'card__k', `Day ${p.day || 1} of ${p.days}`));
-      c.appendChild(progressBar((p.day || 1) / p.days));
-    } else {
-      c.appendChild(el('p', 'card__k', `${p.days} days`));
-    }
-    const cta = el('div', 'card__cta');
-    cta.appendChild(btn('btn btn--sm', enrolled ? 'Continue' : 'Start program', () => {
-      state.program = p.id; save(); render();
-      toast(enrolled ? 'Prototype — daily program content is not built yet.' : `Started ${p.name}.`);
-    }));
-    c.appendChild(cta);
-    wrap.appendChild(c);
-  });
-  return wrap;
-}
 
 function viewSessions() {
   const wrap = el('div', 'stack');
@@ -1185,7 +1198,11 @@ function viewSessions() {
     kind: 'guided', title: r.activity, when: relTime(r.at),
     outcome: r.helpful ? 'Helped' : 'No change', before: r.before, after: r.after,
   }));
-  const rows = [...mine, ...DEMO_SESSIONS];
+  const rows = mine;
+  if (!rows.length) {
+    wrap.appendChild(el('p', 'card__body', 'Your completed guided activities will appear here.'));
+    wrap.appendChild(btn('btn', 'Try a guided activity', () => startActivityDirect('reset')));
+  }
   rows.forEach((s) => {
     const c = card('card--row');
     const i = el('span', 'rowcard__icon');
@@ -1198,28 +1215,7 @@ function viewSessions() {
     c.append(i, tx);
     wrap.appendChild(c);
   });
-  wrap.appendChild(demoNote('Earlier entries are illustrative sample history.'));
-  return wrap;
-}
-
-function viewPlus() {
-  const wrap = el('div', 'stack');
-  const head = section('Zuporta+', 'Your personal wellness companion.');
-  wrap.appendChild(head);
-  PLUS_FEATURES.forEach((f) => {
-    const c = card('card--row');
-    const i = el('span', 'rowcard__icon');
-    i.appendChild(icon(f.icon));
-    const tx = el('div');
-    tx.appendChild(el('p', 'card__title', f.title));
-    tx.appendChild(el('p', 'card__body', f.body));
-    c.append(i, tx);
-    wrap.appendChild(c);
-  });
-  const cta = el('div', 'stack__cta');
-  cta.appendChild(btn('btn', 'Start Zuporta+', () => toast('Prototype — plans are not purchasable yet.')));
-  wrap.appendChild(cta);
-  wrap.appendChild(poweredNote());
+  wrap.appendChild(demoNote('Only activities recorded on this device appear here.'));
   return wrap;
 }
 
@@ -1239,7 +1235,6 @@ function viewProfile() {
   c.append(lab, input);
   wrap.appendChild(c);
 
-  wrap.appendChild(rowCard('i-heart', 'Zuporta+ membership', 'See what is included', () => go('plus')));
   wrap.appendChild(rowCard('i-settings', 'Settings', 'Personalization, data and sharing', () => go('settings')));
   wrap.appendChild(poweredNote());
   return wrap;
@@ -1249,10 +1244,86 @@ function viewSettings() {
   const wrap = el('div', 'stack');
   wrap.appendChild(section('Settings'));
 
+  const reminder = card();
+  reminder.append(el('p', 'card__k', 'Daily check-in reminder'));
+  if (device.native) {
+    const preference = device.reminders.get();
+    reminder.appendChild(el('p', 'card__body',
+      'Optional and off by default. A generic notification invites you to open Zuporta+; it never shows your wellness entries. Your device may delay delivery.'));
+    const field = el('label', 'field');
+    const time = el('input', 'field__input');
+    time.type = 'time'; time.value = preference.time; time.required = true;
+    const label = el('span', 'field__label', 'Reminder time (device local time)');
+    field.append(label, time);
+    const status = el('p', 'card__body', preference.enabled ? `On · daily at ${preference.time}` : 'Off');
+    status.setAttribute('role', 'status');
+    status.dataset.reminderStatus = 'true';
+    const apply = async (enabled, button) => {
+      if (enabled && !time.reportValidity()) return;
+      actions.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+      time.disabled = true;
+      button.textContent = 'Updating…';
+      try {
+        const result = await device.reminders.set(enabled, enabled ? time.value : preference.time);
+        toast(result.enabled ? 'Daily reminder enabled.' : 'Daily reminder turned off.');
+        if (view === 'settings') render();
+      } catch (error) {
+        const message = error.message || 'Could not update your reminder. Please try again.';
+        if (view === 'settings') {
+          render();
+          const current = $('[data-reminder-status]', viewEl);
+          current.textContent += ' · ' + message;
+        } else toast(message);
+      }
+    };
+    const actions = el('div', 'card__cta');
+    const enable = btn('btn btn--sm', preference.enabled ? 'Save reminder time' : 'Enable daily reminder', () => apply(true, enable));
+    actions.appendChild(enable);
+    if (preference.enabled) {
+      const off = btn('btn btn--ghost btn--sm', 'Turn off reminder', () => apply(false, off));
+      actions.appendChild(off);
+    }
+    reminder.append(field, status, actions);
+  } else {
+    reminder.appendChild(el('p', 'card__body', 'Daily device reminders are available in the iPhone and Android app. This web app does not request notification permission.'));
+  }
+  wrap.appendChild(reminder);
+
+  if (diagnostics.configured) {
+    const reports = card();
+    reports.append(el('p', 'card__k', 'Optional crash diagnostics'),
+      el('p', 'card__body', 'Help improve stability by sending technical crash reports and session counts to Sentry. This does not include your wellness entries or conversation. It starts off and can be turned off here.'));
+    const toggle = btn('btn btn--ghost btn--sm', diagnostics.enabled() ? 'Turn off diagnostics' : 'Enable diagnostics', async () => {
+      toggle.disabled = true;
+      try { await diagnostics.set(!diagnostics.enabled()); render(); }
+      catch { toast('Could not update diagnostics. Please try again.'); toggle.disabled = false; }
+    });
+    reports.appendChild(toggle);
+    if (diagnostics.enabled()) reports.appendChild(btn('btn btn--ghost btn--sm', 'Send a diagnostic check', () => {
+      try { diagnostics.check(); toast('Diagnostic check queued. Delivery needs an internet connection.'); }
+      catch { toast('Could not send the diagnostic check.'); }
+    }));
+    wrap.appendChild(reports);
+  }
+
+  if (device.native) {
+    const feedback = card();
+    feedback.append(el('p', 'card__k', 'Breathing haptics'),
+      el('p', 'card__body', 'A light tap marks each inhale and exhale while a breathing exercise is running.'));
+    const toggle = btn('btn btn--ghost btn--sm', device.hapticsEnabled() ? 'On' : 'Off', () => {
+      try { device.setHaptics(!device.hapticsEnabled()); render(); }
+      catch { toast('Could not save your haptics preference.'); }
+    });
+    toggle.setAttribute('aria-label', 'Breathing haptics');
+    toggle.setAttribute('aria-pressed', String(device.hapticsEnabled()));
+    feedback.appendChild(toggle);
+    wrap.appendChild(feedback);
+  }
+
   const c = card();
   c.appendChild(el('p', 'card__k', 'Permissions'));
   c.appendChild(el('p', 'card__body',
-    'Being coached, being studied, sharing with a professional and improving the models are four separate decisions. Agreeing to one never implies the others.'));
+    'Choose whether your helpful guided activity history is used for suggestions on Home. Your wellness entries stay on this device.'));
   const permRow = el('div', 'card__cta');
   permRow.appendChild(btn('btn btn--sm', 'Manage permissions', openConsentSheet));
   c.appendChild(permRow);
@@ -1266,27 +1337,23 @@ function viewSettings() {
   c.appendChild(summary);
   wrap.appendChild(c);
 
-  const share = card();
-  share.appendChild(el('p', 'card__k', 'Professional Sharing Preferences'));
-  share.appendChild(el('p', 'card__body',
-    'Information from sessions with a human professional does not flow into Zuporta+ personalization unless you explicitly allow it.'));
-  share.appendChild(el('p', 'card__meta', consented('professional') ? 'Sharing is on.' : 'Sharing is off.'));
-  wrap.appendChild(share);
+  wrap.appendChild(demoNote('This app does not send your wellness entries to coaches, research projects or model training.'));
 
   const data = card();
   data.appendChild(el('p', 'card__k', 'My Data'));
   data.appendChild(el('p', 'card__body',
-    'Everything you enter here — check-ins, responses and conversations — is stored only on this device. Nothing is sent to a server.'));
+    'Your check-ins, responses and conversation stay on this device. They are not included in coach-directory requests or optional crash diagnostics.'));
   const dcta = el('div', 'card__cta');
   dcta.appendChild(btn('btn btn--ghost btn--sm', 'Delete My Wellness History', () => {
     openSheet('Delete wellness history?', (body) => {
       body.appendChild(el('p', 'sheet__text',
         'This removes your check-ins, guided responses and conversation from this device. It cannot be undone.'));
       const row = el('div', 'card__cta');
-      row.appendChild(btn('btn btn--sm btn--danger', 'Delete everything', () => {
+      row.appendChild(btn('btn btn--sm btn--danger', 'Delete wellness history', () => {
         const keepName = state.profile.name;
         state = defaults();
         state.profile.name = keepName;
+        clearAnalytics();
         save(); closeSheet(); go('home'); toast('Wellness history deleted.');
       }));
       row.appendChild(btn('btn btn--ghost btn--sm', 'Cancel', closeSheet));
@@ -1299,12 +1366,28 @@ function viewSettings() {
   const about = card();
   about.appendChild(el('p', 'card__k', 'About'));
   about.appendChild(el('p', 'card__body',
-    'Zuporta+ is the personal wellness companion from Zuporta, powered by Zuporta Connect™. This build is a prototype: guided responses are generated on the device and no booking or payment is connected.'));
+    'Zuporta+ is the personal wellness companion from Zuporta, powered by Zuporta Connect™. Guided responses are generated on your device. Booking and payment for coaching sessions happen on zuporta.com.'));
   const link = el('a', 'link', 'zuporta.com');
   link.href = 'https://zuporta.com'; link.target = '_blank'; link.rel = 'noopener noreferrer';
   const ap = el('p', 'card__body');
   ap.append(document.createTextNode('A Zuporta product · '), link);
   about.appendChild(ap);
+  const privacy = el('a', 'link', 'Privacy Policy');
+  privacy.href = 'privacy.html';
+  const terms = el('a', 'link', 'Terms of Use');
+  terms.href = 'terms.html';
+  const legal = el('p', 'card__body');
+  legal.append(privacy, document.createTextNode(' · '), terms);
+  about.appendChild(legal);
+  const support = el('p', 'card__body');
+  const supportLink = el('a', 'link', 'Contact support');
+  supportLink.href = 'https://zuporta.com/#contact';
+  supportLink.target = '_blank'; supportLink.rel = 'noopener noreferrer';
+  const deletionLink = el('a', 'link', 'Website account deletion instructions');
+  deletionLink.href = 'https://zuporta.com/privacy#your-rights';
+  deletionLink.target = '_blank'; deletionLink.rel = 'noopener noreferrer';
+  support.append(supportLink, document.createTextNode(' · '), deletionLink);
+  about.appendChild(support);
   wrap.appendChild(about);
   return wrap;
 }
@@ -1374,6 +1457,14 @@ function closeSheet() {
 }
 sheetEl.addEventListener('click', (e) => { if (e.target.closest('[data-sheet-close]')) closeSheet(); });
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Tab' && !sheetEl.hidden) {
+    const focusable = [...sheetEl.querySelectorAll('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')]
+      .filter((node) => node.getClientRects().length);
+    const first = focusable[0]; const last = focusable[focusable.length - 1];
+    if (first && (e.shiftKey ? document.activeElement === first : document.activeElement === last)) {
+      e.preventDefault(); (e.shiftKey ? last : first).focus();
+    }
+  }
   if (e.key !== 'Escape') return;
   if (!sheetEl.hidden) closeSheet(); else closeDrawer();
 });
@@ -1395,7 +1486,9 @@ function syncThemeBtn() {
   $('#theme-label').textContent = dark ? 'Light' : 'Dark';
   themeBtn.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
   themeBtn.querySelector('use').setAttribute('href', dark ? '#i-sun' : '#i-moon');
+  device.setTheme(dark ? 'dark' : 'light');
 }
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncThemeBtn);
 themeBtn.addEventListener('click', () => {
   const next = currentTheme() === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = next;
@@ -1433,7 +1526,7 @@ function iosBrowser() {
 const isIOSSafari = () => isIOS() && iosBrowser() === 'Safari';
 
 function refreshInstallUI() {
-  if (isStandalone()) {
+  if (device.native || isStandalone()) {
     installBtn.hidden = true;
     banner.hidden = true;
     return;
@@ -1603,13 +1696,11 @@ function eventWidget() {
   if (s.before != null && s.after != null) c.appendChild(measureWidget(s.before, s.after));
 
   const note = el('p', 'wcard__meta');
-  note.textContent = consented('research')
-    ? 'Included in aggregate research, de-identified. You can withdraw in Settings.'
-    : 'Kept on your device only. Research contribution is off.';
+  note.textContent = 'This record stays on your device. It is not shared with researchers or coaches.';
   c.appendChild(note);
 
   const fu = el('p', 'wcard__meta');
-  fu.textContent = 'Zuporta+ will check back in 1 hour, 24 hours, 7 days and 30 days to see whether it lasted.';
+  fu.textContent = 'Follow-up questions will appear when you return after 1 hour, 24 hours, 7 days and 30 days. These are not notifications.';
   c.appendChild(fu);
   return c;
 }
@@ -1621,7 +1712,8 @@ function consented(layer) {
 }
 
 function setConsent(layer, value) {
-  if (!state.consent) state.consent = { personalize: false, research: false, professional: false, model: false };
+  if (layer !== 'personalize') return;
+  if (!state.consent) state.consent = { personalize: false };
   state.consent[layer] = value;
   save();
 }
@@ -1660,35 +1752,13 @@ function followupCard(f) {
 /* ---------- Human State Vector ---------- */
 
 function stateVectorCard() {
-  const ev = state.events[0];
+  const ev = state.events.find((e) => !e.module && e.after != null);
   const c = card();
-  c.appendChild(el('p', 'card__k', 'Human State Vector'));
-  c.appendChild(el('p', 'card__body',
-    'A reading across dimensions, taken either side of an intervention. Self-reported, non-clinical.'));
-
-  const wrap = el('div', 'vector');
-  STATE_DIMS.forEach((d, i) => {
-    // Only stress is actually measured in this prototype; the rest are shown
-    // as the shape of the vector the measurement layer is designed to fill.
-    const measured = d.id === 'stress' && ev && ev.after != null;
-    const value = measured ? ev.after : null;
-    const row = el('div', 'vector__row');
-    row.appendChild(el('span', 'vector__k', d.label));
-    const track = el('div', 'vector__track');
-    if (measured) {
-      const fill = el('div', 'vector__fill');
-      fill.style.width = (value * 10) + '%';
-      track.appendChild(fill);
-    } else {
-      track.classList.add('vector__track--empty');
-    }
-    row.appendChild(track);
-    row.appendChild(el('span', 'vector__v', measured ? `${value}/10` : 'not yet'));
-    wrap.appendChild(row);
-  });
-  c.appendChild(wrap);
-  c.appendChild(el('p', 'card__meta',
-    'Stress is measured today. The remaining dimensions are the roadmap for the measurement layer, not claims about you.'));
+  c.appendChild(el('p', 'card__k', 'Latest guided check-in'));
+  c.appendChild(el('p', 'card__body', ev
+    ? `You rated how overwhelmed you felt ${ev.before}/10 before and ${ev.after}/10 after ${ev.intervention}.`
+    : 'Complete a guided activity to compare your before and after self-ratings.'));
+  c.appendChild(el('p', 'card__meta', 'Self-reported wellness ratings, not a diagnosis.'));
   return c;
 }
 
@@ -1700,11 +1770,11 @@ function latestEventCard() {
   const dl = el('dl', 'record');
   [
     ['Context', labelOf(CONTEXTS, ev.context)],
-    ['Before', ev.before != null ? `${ev.before}/10` : '—'],
+    ['Before', ev.before != null ? (ev.module ? String(ev.before) : `${ev.before}/10`) : '—'],
     ['Intervention', ev.intervention],
-    ['After', ev.after != null ? `${ev.after}/10` : '—'],
+    ['After', ev.after != null ? (ev.module ? String(ev.after) : `${ev.after}/10`) : '—'],
     ['Already tried', labelOf(COPING, ev.coping)],
-    ['Outcome', ev.helped ? 'Helped' : 'No change'],
+    ['Outcome', ev.helped == null ? 'Not rated' : ev.helped ? 'Helped' : 'No change'],
   ].forEach(([k, v]) => { dl.appendChild(el('dt', null, k)); dl.appendChild(el('dd', null, v)); });
   c.appendChild(dl);
 
@@ -1719,7 +1789,7 @@ function latestEventCard() {
   });
   c.appendChild(ul);
   c.appendChild(el('p', 'card__meta',
-    'One record. Thousands of these, consented and de-identified, are what make intervention-outcome research possible.'));
+    'This record and its follow-up answers stay on your device.'));
   return c;
 }
 
@@ -1731,7 +1801,7 @@ function latestEventCard() {
 /** Everything a vertical is allowed to use from the shell. */
 function moduleCtx() {
   return {
-    el, btn, icon, card, section, demoNote, toast, openSheet, closeSheet, go,
+    el, btn, icon, card, section, demoNote, toast, openSheet, closeSheet, go, startActivityDirect,
     state,
     commit() { save(); render(); },
     onPlanSaved: moduleToConnect,
@@ -1783,7 +1853,7 @@ function viewModules() {
     ensureAllModules().then(() => { modulesLoaded = true; if (view === 'modules') render(); });
   }
   wrap.appendChild(section('Modules',
-    'Vertical programmes built on Zuporta Connect. Each one has its own audience, buyer and scope boundary, and runs inside this app.'));
+    'Tools for private check-ins and reflection on this device.'));
 
   // Always present in manifest order; the registry fills in load order.
   const loaded = modules();
@@ -1800,21 +1870,13 @@ function viewModules() {
     head.append(ic, tx);
     c.appendChild(head);
 
-    if (m.audience) {
-      const dl = el('dl', 'record');
-      [['For', m.audience], ['Bought by', m.buyer], ['Outcome', m.outcome]]
-        .forEach(([k, v]) => { dl.appendChild(el('dt', null, k)); dl.appendChild(el('dd', null, v)); });
-      c.appendChild(dl);
-    }
-
     const cta = el('div', 'card__cta');
     cta.appendChild(btn('btn btn--sm', 'Open', () => go('m/' + m.id)));
-    if (m.inScope) cta.appendChild(btn('btn btn--ghost btn--sm', 'Scope & pilot gaps', () => openModuleScope(m)));
+    if (m.inScope) cta.appendChild(btn('btn btn--ghost btn--sm', 'About this tool', () => openModuleScope(m)));
     c.appendChild(cta);
     wrap.appendChild(c);
   });
 
-  wrap.appendChild(analyticsPanel());
   return wrap;
 }
 
@@ -1831,49 +1893,7 @@ function openModuleScope(m) {
     a.appendChild(ul2);
     body.appendChild(a);
 
-    const b = el('div', 'card');
-    b.appendChild(el('p', 'card__k', 'Required before a paid pilot'));
-    b.appendChild(el('p', 'card__body', 'None of these are built. The prototype demonstrates the flow, not the service.'));
-    const ol = el('ol', 'steps');
-    m.pilotGaps.forEach((t) => ol.appendChild(el('li', null, t)));
-    b.appendChild(ol);
-    body.appendChild(b);
   });
-}
-
-/**
- * Shows exactly what instrumentation would send. The contract says no
- * event may contain conversation text or the plan, so the panel exists
- * to make that checkable rather than claimed.
- */
-function analyticsPanel() {
-  const c = card();
-  c.appendChild(el('p', 'card__k', 'Pilot instrumentation'));
-  c.appendChild(el('p', 'card__body',
-    'Events are rejected unless the module declared them, and property values must be numbers, booleans, or a declared category. Free text has no shape to travel in, so transcripts and plans cannot be emitted even by mistake.'));
-
-  const log = analyticsLog();
-  if (!log.length) {
-    c.appendChild(el('p', 'card__meta',
-      `No events captured yet. ${declaredEvents().length} declared so far, across ${MANIFEST.length} module(s).`));
-    return c;
-  }
-
-  const t = el('div', 'evlog');
-  log.slice(0, 12).forEach((row) => {
-    const line = el('div', 'evlog__row');
-    line.appendChild(el('span', 'evlog__name', row.event));
-    const props = Object.entries(row.props).map(([k, v]) => `${k}=${v}`).join(' ');
-    line.appendChild(el('span', 'evlog__props', props || '—'));
-    if (row.rejected) line.appendChild(el('span', 'evlog__rej', 'stripped: ' + row.rejected.join(', ')));
-    t.appendChild(line);
-  });
-  c.appendChild(t);
-
-  const cta = el('div', 'card__cta');
-  cta.appendChild(btn('btn btn--ghost btn--sm', 'Clear log', () => { clearAnalytics(); render(); }));
-  c.appendChild(cta);
-  return c;
 }
 
 /** Shown for the moment a module's code is in flight. */
@@ -1897,7 +1917,7 @@ function moduleHomeCard() {
   const mine = slices[show.id];
 
   const c = card();
-  c.appendChild(el('p', 'card__k', started.length ? 'Your programme' : 'Programmes'));
+  c.appendChild(el('p', 'card__k', 'Private check-ins'));
   c.appendChild(el('p', 'card__title', show.name));
   c.appendChild(el('p', 'card__body', mine && mine.completedAt
     ? 'Your plan is saved. Start another check-in whenever you need one.'
@@ -1905,7 +1925,7 @@ function moduleHomeCard() {
   const cta = el('div', 'card__cta');
   cta.appendChild(btn('btn btn--sm', mine && mine.completedAt ? 'New check-in' : 'Start check-in',
     () => go('m/' + show.id)));
-  cta.appendChild(btn('btn btn--ghost btn--sm', 'All ' + all.length + ' modules', () => go('modules')));
+  cta.appendChild(btn('btn btn--ghost btn--sm', 'Browse tools', () => go('modules')));
   c.appendChild(cta);
   return c;
 }
@@ -1914,17 +1934,49 @@ function moduleHomeCard() {
 
 view = (location.hash.replace('#/', '') || 'home');
 // Check the manifest, not the registry: module code has not loaded yet.
-if (!TITLES[view] && !(view.startsWith('m/') && manifestById(view.slice(2)))) view = 'home';
+view = availableView(view);
 syncThemeBtn();
 render();
 autosize();
 refreshInstallUI();
 
+document.addEventListener('visibilitychange', () => { if (document.hidden) stopBreathing(); });
+window.addEventListener('online', () => { liveTried = false; ensureLivePros(); });
+document.addEventListener('click', (event) => {
+  if (!device.native || event.defaultPrevented || event.button !== 0) return;
+  const link = event.target.closest('a[href]');
+  if (!link || !externalURL(link.href, location.origin)) return;
+  event.preventDefault();
+  device.openExternal(link.href).catch(() => toast('Could not open the browser. Check your connection and try again.'));
+});
+device.initialize({
+  onBack: () => {
+    if (!sheetEl.hidden) { closeSheet(); return true; }
+    if (navEl.classList.contains('is-open')) { closeDrawer(); return true; }
+    if (view !== 'home') { go('home'); return true; }
+    return false;
+  },
+  onCheckIn: () => { closeSheet(); closeDrawer(); go('home'); },
+  onActive: (active) => {
+    if (!active) stopBreathing();
+    else { syncThemeBtn(); if (view === 'settings' || view === 'professionals') render(); }
+  },
+  onError: toast,
+  onOpenLink: (action) => {
+    closeSheet(); closeDrawer();
+    if (action === 'breathe') startActivityDirect('reset');
+    else go(action === 'coaches' ? 'professionals' : 'home');
+  },
+});
+diagnostics.initialize().catch(() => toast('Optional diagnostics could not start. The wellness app is still available.'));
+
 // manifest shortcuts
-const tool = new URLSearchParams(location.search).get('tool');
-if (tool === 'breathe') { startActivityDirect('reset'); history.replaceState(null, '', location.pathname); }
-else if (tool === 'match') { go('professionals'); history.replaceState(null, '', location.pathname); }
-else if (tool === 'mood') { go('home'); history.replaceState(null, '', location.pathname); }
+const tool = location.hash ? null : (({ '/open/check-in': 'mood', '/open/breathe': 'breathe', '/open/coaches': 'match' })[location.pathname]
+  || new URLSearchParams(location.search).get('tool'));
+if (tool === 'breathe') startActivityDirect('reset');
+else if (tool === 'match') go('professionals');
+else if (tool === 'mood') go('home');
+if (['breathe', 'match', 'mood'].includes(tool)) history.replaceState(null, '', location.pathname + location.hash);
 
 /* ============================================================
    Real accounts
@@ -1947,7 +1999,8 @@ function accountCard() {
     a.textContent = label;
     return a;
   };
-  cta.appendChild(link(SIGN_IN_URL, 'Sign in', 'btn btn--sm'));
+  cta.appendChild(link(COACHES_URL, 'Browse coaches', 'btn btn--sm'));
+  cta.appendChild(link(SIGN_IN_URL, 'Sign in', 'btn btn--ghost btn--sm'));
   cta.appendChild(link(SIGN_UP_URL, 'Create an account', 'btn btn--ghost btn--sm'));
   c.appendChild(cta);
   return c;

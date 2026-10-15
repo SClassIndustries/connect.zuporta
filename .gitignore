@@ -1,0 +1,15 @@
+.harnesskit/
+node_modules/
+__pycache__/
+.native-assets/
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+build/
+*.ipa
+*.xcarchive/
+*.keychain-db
+*.p8
+android/.kotlin/
+build-*.log

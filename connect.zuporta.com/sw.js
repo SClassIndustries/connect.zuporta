@@ -17,27 +17,24 @@
    coupled to the markup.
    ============================================================ */
 
-const VERSION = 'zuporta-v9';
+const VERSION = 'zuporta-v14';
 
 const SHELL = [
   './',
   './index.html',
+  './privacy.html',
+  './terms.html',
   './manifest.webmanifest',
   './assets/css/app.css',
   './assets/js/app.js',
+  './assets/js/native.js',
+  './assets/js/monitoring.js',
   './assets/js/data.js',
   './assets/js/assistant.js',
   './assets/js/modules.js',
   './assets/js/zuporta-api.js',
-  './assets/js/flow.js',
-  './assets/js/caregiver.js',
-  './assets/js/career.js',
-  './assets/js/nightshift.js',
-  './assets/js/parentbridge.js',
   './assets/js/care.js',
-  './assets/js/nurseguide.js',
   './assets/js/baseline.js',
-  './assets/js/navigator.js',
   './assets/img/mark.svg',
   './assets/img/icon-192.png',
   './assets/img/icon-512.png',

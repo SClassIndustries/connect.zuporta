@@ -1,0 +1,52 @@
+{
+  "name": "zuporta-plus",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zuporta+ web and native wellness companion",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "start": "python3 -m http.server 8000 --bind 127.0.0.1 --directory connect.zuporta.com",
+    "sync": "cap sync",
+    "sync:android": "cap sync android",
+    "sync:ios": "cap sync ios",
+    "test:ui": "python3 tests/release_ui.py",
+    "assets:native": "node scripts/generate-native-assets.mjs",
+    "build:native": "node scripts/build-native.mjs",
+    "presync": "npm run build:native",
+    "presync:android": "npm run build:native",
+    "presync:ios": "npm run build:native",
+    "test": "node --test tests/*.test.mjs",
+    "test:native-ui": "python3 tests/native_ui.py",
+    "lint": "eslint .",
+    "check:package": "node scripts/check-package.mjs",
+    "test:a11y": "python3 tests/accessibility.py",
+    "links:android": "node scripts/configure-links.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/haptics": "8.0.2",
+    "@capacitor/ios": "8.5.3",
+    "@capacitor/local-notifications": "8.3.1",
+    "@capacitor/share": "8.0.3",
+    "@sentry/browser": "10.69.0",
+    "@sentry/capacitor": "4.4.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "3.0.5",
+    "@capacitor/cli": "8.5.3",
+    "esbuild": "0.28.2",
+    "eslint": "10.0.3",
+    "globals": "17.4.0"
+  },
+  "type": "module",
+  "overrides": {
+    "tar": "7.5.22",
+    "sharp": "0.35.5",
+    "uuid": "11.1.1"
+  }
+}

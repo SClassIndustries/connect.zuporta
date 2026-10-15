@@ -1,0 +1,22 @@
+{
+  "appId": "com.zuporta.plus",
+  "appName": "Zuporta+",
+  "webDir": "connect.zuporta.com",
+  "ios": {
+    "contentInset": "never"
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "native",
+      "initialViewportFitValueHint": "cover"
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_zuporta",
+      "iconColor": "#2c63a8",
+      "presentationOptions": [
+        "banner",
+        "list"
+      ]
+    }
+  }
+}
