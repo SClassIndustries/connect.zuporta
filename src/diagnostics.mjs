@@ -23,7 +23,11 @@ export function createDiagnostics({ configured, storage, sdk }) {
   const start = async () => { if (!started) { await sdk.start(); started = true; } };
   return {
     configured, enabled: () => enabled,
-    initialize: () => serialize(async () => { if (enabled) await start(); }),
+    initialize: () => serialize(async () => {
+      if (!enabled) return;
+      try { await start(); }
+      catch (error) { enabled = false; storage.setItem(DIAGNOSTICS_KEY, 'off'); throw error; }
+    }),
     set: (value) => serialize(async () => {
       if (!configured) throw new Error('Diagnostics are not configured for this build.');
       if (value) {

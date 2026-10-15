@@ -1,7 +1,9 @@
 name: Web and business logic
 on:
   push:
+    paths-ignore: ['store/**', '*.md']
   pull_request:
+    paths-ignore: ['store/**', '*.md']
   workflow_dispatch:
 permissions:
   contents: read

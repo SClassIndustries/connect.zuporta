@@ -3,7 +3,7 @@
 // Verify US crisis resources against official providers before release.
 export const CRISIS = {
   emergency: 'If you are in immediate danger, call your local emergency number.',
-  directoryText: 'Free, 24/7 crisis lines for every country:',
+  directoryText: 'Find crisis support for your country:',
   directoryUrl: 'https://findahelpline.com',
   directoryLabel: 'findahelpline.com',
   lines: [

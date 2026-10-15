@@ -1,7 +1,9 @@
 name: iPhone artifacts
 on:
   push:
+    paths-ignore: ['store/**', '*.md']
   pull_request:
+    paths-ignore: ['store/**', '*.md']
   workflow_dispatch:
     inputs:
       signed:

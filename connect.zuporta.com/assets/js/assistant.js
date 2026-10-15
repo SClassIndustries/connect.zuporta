@@ -93,7 +93,7 @@ export const PATHS = [
   { action: 'path:talk',  icon: 'i-book',   label: 'Talk It Through', sub: 'Organize what is on your mind.' },
   { action: 'path:reset', icon: 'i-wind',   label: 'Guided Reset',    sub: 'Try a short structured wellness exercise.' },
   { action: 'path:work',  icon: 'i-target', label: 'Work Through It', sub: 'Explore what is contributing and possible next steps.' },
-  { action: 'path:pro',   icon: 'i-user',   label: 'Talk to Someone', sub: 'Connect with a certified professional.' },
+  { action: 'path:pro',   icon: 'i-user',   label: 'Talk to Someone', sub: 'Find human wellness support.' },
 ];
 
 /* ---------- free-text turns ---------- */
@@ -309,7 +309,7 @@ function decidedHelped(session) {
     choices([
       { action: 'decide:continue', icon: 'i-spark',  label: 'Continue',        sub: 'Keep going with something else.' },
       { action: 'decide:save',     icon: 'i-check',  label: 'Save for later',  sub: 'Add it to My Wellness.' },
-      { action: 'path:pro',        icon: 'i-user',   label: 'Talk with someone', sub: 'Connect with a certified professional.' },
+      { action: 'path:pro',        icon: 'i-user',   label: 'Talk with someone', sub: 'Find human wellness support.' },
     ]),
   ];
 }

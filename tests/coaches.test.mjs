@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { coachProfileUrl, COACHES_URL, fetchPros, toPro } from '../connect.zuporta.com/assets/js/zuporta-api.js';
+import { coachProfileUrl, COACHES_URL, fetchPros, cachedPros, toPro } from '../connect.zuporta.com/assets/js/zuporta-api.js';
 
 const id = '01ARZ3NDEKTSV4RRFFQ69G5FAV';
 const coach = (changes = {}) => ({ id, name: 'Synthetic Coach', specialities: ['Stress'], online: true, ...changes });
@@ -44,4 +44,11 @@ test('fresh cached directory avoids network; malformed/empty responses never fab
   assert.equal(await fetchPros({ force: true }), null);
   globalThis.fetch = async () => ({ ok: true, json: async () => ({ unexpected: [] }) });
   assert.equal(await fetchPros({ force: true }), null);
+});
+
+test('stale offline profiles do not claim that a coach is still online', () => {
+  memory.clear();
+  memory.set('zuporta.coaches.cache', JSON.stringify({ at: Date.now() - 120000, pros: [{ id, availability: 'now', slot: 'Available now' }] }));
+  assert.equal(cachedPros()[0].availability, 'schedule');
+  assert.equal(cachedPros()[0].slot, 'Check availability on Zuporta');
 });

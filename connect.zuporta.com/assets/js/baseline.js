@@ -368,7 +368,7 @@ function supportStage(ctx, m) {
 
   const opts = [
     ['guided', 'A short guided activity', 'Five minutes, structured, in Zuporta+.'],
-    ['coach', 'Talk to a professional', 'A certified coach from the marketplace.'],
+    ['coach', 'Talk to a professional', 'A coach from the Zuporta directory.'],
     ['none', 'Nothing right now', 'Just keep tracking.'],
   ];
   opts.forEach(([id, title, body]) => {

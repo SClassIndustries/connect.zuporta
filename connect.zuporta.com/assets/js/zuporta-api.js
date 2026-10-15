@@ -18,7 +18,7 @@
 
 const API = 'https://api.zuporta.com';
 const CACHE_KEY = 'zuporta.coaches.cache';
-const CACHE_TTL = 6 * 60 * 60 * 1000;   // six hours
+const CACHE_TTL = 60 * 1000; // Availability changes quickly; refresh after one minute.
 
 export const SIGN_IN_URL = 'https://zuporta.com/login';
 export const SIGN_UP_URL = 'https://zuporta.com/register';
@@ -103,8 +103,13 @@ function writeCache(pros) {
   catch (e) { /* storage unavailable */ }
 }
 
-/** Coaches from the last successful fetch, however old. */
-export const cachedPros = () => (readCache() || {}).pros || null;
+function cachedRoster(cache) {
+  if (!cache) return null;
+  return Date.now() - cache.at < CACHE_TTL ? cache.pros
+    : cache.pros.map((pro) => ({ ...pro, availability: 'schedule', slot: 'Check availability on Zuporta' }));
+}
+/** Old cached profiles remain useful, but never retain a stale online claim. */
+export const cachedPros = () => cachedRoster(readCache());
 
 /**
  * Fetch the real coach roster.
@@ -142,7 +147,7 @@ export async function fetchPros({ pages = 2, force = false } = {}) {
     writeCache(unique);
     return unique;
   } catch (e) {
-    return cache ? cache.pros : null;
+    return cachedRoster(cache);
   }
 }
 

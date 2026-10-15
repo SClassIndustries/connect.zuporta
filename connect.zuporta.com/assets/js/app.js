@@ -279,7 +279,7 @@ function viewHome() {
   [
     { icon: 'i-spark', t: 'Talk to Zuporta+', d: 'Personalized wellness support, anytime.',
       cta: 'Start a conversation', run: () => go('assistant') },
-    { icon: 'i-users', t: 'Talk to a Professional', d: 'Connect with a certified wellness professional for real human support.',
+    { icon: 'i-users', t: 'Talk to a Professional', d: 'Find a Zuporta coach for human wellness support.',
       cta: 'Find someone', run: () => go('professionals') },
     { icon: 'i-target', t: 'Continue My Wellness Journey', d: 'Check in, work toward your goals, or continue where you left off.',
       cta: 'My Wellness', run: () => go('wellness') },
@@ -887,10 +887,12 @@ let busy = false;
    the bundled sample list in data.js is only a fallback. */
 var livePros = cachedPros();
 var liveTried = false;
+var liveAttemptAt = 0;
 
 function ensureLivePros() {
-  if (liveTried) return;
+  if (liveTried && Date.now() - liveAttemptAt < 60000) return;
   liveTried = true;
+  liveAttemptAt = Date.now();
   fetchPros().then((pros) => {
     if (!pros || !pros.length) return;
     livePros = pros;
@@ -1019,7 +1021,7 @@ function viewProfessionals() {
   wrap.appendChild(head);
 
   const filters = el('div', 'segmented');
-  [['now', 'Available Now'], ['today', 'Available Today'], ['schedule', 'Schedule']].forEach(([id, label]) => {
+  [['now', 'Listed online'], ['today', 'Other coaches'], ['schedule', 'All coaches']].forEach(([id, label]) => {
     const b = btn('segmented__btn', label, () => { proFilter = id; render(); });
     b.setAttribute('aria-pressed', String(proFilter === id));
     filters.appendChild(b);
@@ -1034,7 +1036,7 @@ function viewProfessionals() {
   list.forEach((p) => grid.appendChild(proCard(p, false)));
   if (!list.length) {
     grid.appendChild(el('p', 'card__body', currentPros().length
-      ? 'No coaches match this filter. Choose Schedule to see the directory.'
+      ? 'No coaches match this filter. Choose All coaches to see the directory.'
       : 'The coach directory is unavailable. Reconnect or browse coaches on zuporta.com.'));
   }
   wrap.appendChild(grid);
@@ -1340,7 +1342,7 @@ function viewSettings() {
   const data = card();
   data.appendChild(el('p', 'card__k', 'My Data'));
   data.appendChild(el('p', 'card__body',
-    'Everything you enter here — check-ins, responses and conversations — is stored only on this device. Nothing is sent to a server.'));
+    'Your check-ins, responses and conversation stay on this device. They are not included in coach-directory requests or optional crash diagnostics.'));
   const dcta = el('div', 'card__cta');
   dcta.appendChild(btn('btn btn--ghost btn--sm', 'Delete My Wellness History', () => {
     openSheet('Delete wellness history?', (body) => {
@@ -1939,6 +1941,7 @@ autosize();
 refreshInstallUI();
 
 document.addEventListener('visibilitychange', () => { if (document.hidden) stopBreathing(); });
+window.addEventListener('online', () => { liveTried = false; ensureLivePros(); });
 document.addEventListener('click', (event) => {
   if (!device.native || event.defaultPrevented || event.button !== 0) return;
   const link = event.target.closest('a[href]');
@@ -1956,7 +1959,7 @@ device.initialize({
   onCheckIn: () => { closeSheet(); closeDrawer(); go('home'); },
   onActive: (active) => {
     if (!active) stopBreathing();
-    else { syncThemeBtn(); if (view === 'settings') render(); }
+    else { syncThemeBtn(); if (view === 'settings' || view === 'professionals') render(); }
   },
   onError: toast,
   onOpenLink: (action) => {
