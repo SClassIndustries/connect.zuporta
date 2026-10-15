@@ -1973,9 +1973,10 @@ diagnostics.initialize().catch(() => toast('Optional diagnostics could not start
 // manifest shortcuts
 const tool = location.hash ? null : (({ '/open/check-in': 'mood', '/open/breathe': 'breathe', '/open/coaches': 'match' })[location.pathname]
   || new URLSearchParams(location.search).get('tool'));
-if (tool === 'breathe') { startActivityDirect('reset'); history.replaceState(null, '', location.pathname); }
-else if (tool === 'match') { go('professionals'); history.replaceState(null, '', location.pathname); }
-else if (tool === 'mood') { go('home'); history.replaceState(null, '', location.pathname); }
+if (tool === 'breathe') startActivityDirect('reset');
+else if (tool === 'match') go('professionals');
+else if (tool === 'mood') go('home');
+if (['breathe', 'match', 'mood'].includes(tool)) history.replaceState(null, '', location.pathname + location.hash);
 
 /* ============================================================
    Real accounts

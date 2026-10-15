@@ -41,5 +41,6 @@ jobs:
           python scripts/wait-http.py
           npm run test:ui
           npm run test:native-ui
+          python tests/release_edges.py
           python tests/accessibility.py
       - run: npm run check:package
