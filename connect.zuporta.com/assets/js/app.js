@@ -19,6 +19,7 @@ import {
   fetchPros, cachedPros, matchLivePros, coachProfileUrl, SIGN_IN_URL, SIGN_UP_URL, COACHES_URL,
 } from './zuporta-api.js';
 import { device, externalURL } from './native.js';
+import { diagnostics } from './monitoring.js';
 
 /* ---------- helpers ---------- */
 
@@ -1286,6 +1287,23 @@ function viewSettings() {
   }
   wrap.appendChild(reminder);
 
+  if (diagnostics.configured) {
+    const reports = card();
+    reports.append(el('p', 'card__k', 'Optional crash diagnostics'),
+      el('p', 'card__body', 'Help improve stability by sending technical crash reports and session counts to Sentry. This does not include your wellness entries or conversation. It starts off and can be turned off here.'));
+    const toggle = btn('btn btn--ghost btn--sm', diagnostics.enabled() ? 'Turn off diagnostics' : 'Enable diagnostics', async () => {
+      toggle.disabled = true;
+      try { await diagnostics.set(!diagnostics.enabled()); render(); }
+      catch { toast('Could not update diagnostics. Please try again.'); toggle.disabled = false; }
+    });
+    reports.appendChild(toggle);
+    if (diagnostics.enabled()) reports.appendChild(btn('btn btn--ghost btn--sm', 'Send a diagnostic check', () => {
+      try { diagnostics.check(); toast('Diagnostic check queued. Delivery needs an internet connection.'); }
+      catch { toast('Could not send the diagnostic check.'); }
+    }));
+    wrap.appendChild(reports);
+  }
+
   if (device.native) {
     const feedback = card();
     feedback.append(el('p', 'card__k', 'Breathing haptics'),
@@ -1437,6 +1455,14 @@ function closeSheet() {
 }
 sheetEl.addEventListener('click', (e) => { if (e.target.closest('[data-sheet-close]')) closeSheet(); });
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Tab' && !sheetEl.hidden) {
+    const focusable = [...sheetEl.querySelectorAll('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')]
+      .filter((node) => node.getClientRects().length);
+    const first = focusable[0]; const last = focusable[focusable.length - 1];
+    if (first && (e.shiftKey ? document.activeElement === first : document.activeElement === last)) {
+      e.preventDefault(); (e.shiftKey ? last : first).focus();
+    }
+  }
   if (e.key !== 'Escape') return;
   if (!sheetEl.hidden) closeSheet(); else closeDrawer();
 });
@@ -1933,10 +1959,17 @@ device.initialize({
     else { syncThemeBtn(); if (view === 'settings') render(); }
   },
   onError: toast,
+  onOpenLink: (action) => {
+    closeSheet(); closeDrawer();
+    if (action === 'breathe') startActivityDirect('reset');
+    else go(action === 'coaches' ? 'professionals' : 'home');
+  },
 });
+diagnostics.initialize().catch(() => toast('Optional diagnostics could not start. The wellness app is still available.'));
 
 // manifest shortcuts
-const tool = new URLSearchParams(location.search).get('tool');
+const tool = location.hash ? null : (({ '/open/check-in': 'mood', '/open/breathe': 'breathe', '/open/coaches': 'match' })[location.pathname]
+  || new URLSearchParams(location.search).get('tool'));
 if (tool === 'breathe') { startActivityDirect('reset'); history.replaceState(null, '', location.pathname); }
 else if (tool === 'match') { go('professionals'); history.replaceState(null, '', location.pathname); }
 else if (tool === 'mood') { go('home'); history.replaceState(null, '', location.pathname); }

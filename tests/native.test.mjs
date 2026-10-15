@@ -173,6 +173,16 @@ test('iOS never installs an Android back handler or channel', async () => {
   assert.equal(f.calls.filter(([method]) => method === 'channel').length, 0);
 });
 
+test('native links route cold and warm launches; unrelated URLs are ignored', async () => {
+  const f = fixture('ios'); const opened = [];
+  f.app.getLaunchUrl = async () => ({ url: 'https://connect.zuporta.com/open/coaches' });
+  const device = createNativeFeatures(f);
+  await device.initialize({ onBack() {}, onCheckIn() {}, onActive() {}, onError: assert.fail, onOpenLink: (action) => opened.push(action) });
+  f.listeners.appUrlOpen({ url: 'https://connect.zuporta.com/open/breathe' });
+  f.listeners.appUrlOpen({ url: 'https://elsewhere.invalid/open/check-in' });
+  assert.deepEqual(opened, ['coaches', 'breathe']);
+});
+
 test('checked-in browser bundle matches the current source and pinned SDKs', async () => {
   const { build } = await import('esbuild');
   const result = await build({ entryPoints: ['src/native.mjs'], bundle: true, write: false, format: 'esm', platform: 'browser',

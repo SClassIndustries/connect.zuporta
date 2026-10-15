@@ -5,6 +5,7 @@ import { Haptics } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
 import { Browser } from '@capacitor/browser';
 import { createReminders, REMINDER_ID } from './reminders.mjs';
+import { launchAction } from './links.mjs';
 
 // Only public exercise content is accepted. No state, scores, names or conversation.
 export function exerciseShare(activity) {
@@ -57,7 +58,7 @@ export function createNativeFeatures({ platform, app, notifications, haptics, sh
       if (!native || !url) throw new Error('This link could not be opened.');
       await browser.open({ url });
     },
-    async initialize({ onBack, onCheckIn, onActive, onError }) {
+    async initialize({ onBack, onCheckIn, onActive, onError, onOpenLink = () => {} }) {
       if (!native) return;
       const listen = async (plugin, event, callback) => {
         try { await plugin.addListener(event, callback); }
@@ -66,6 +67,10 @@ export function createNativeFeatures({ platform, app, notifications, haptics, sh
       if (platform === 'android') await listen(app, 'backButton', () => {
         if (!onBack()) app.minimizeApp().catch(() => onError('Could not return to the Home screen.'));
       });
+      const openLink = (event) => { const action = launchAction(event?.url); if (action) onOpenLink(action); };
+      await listen(app, 'appUrlOpen', openLink);
+      try { if (app.getLaunchUrl) openLink(await app.getLaunchUrl()); }
+      catch { /* Ordinary launches do not need a URL. */ }
       await listen(notifications, 'localNotificationActionPerformed', (event) => {
         if (event.notification?.id === REMINDER_ID && event.actionId === 'tap') onCheckIn();
       });

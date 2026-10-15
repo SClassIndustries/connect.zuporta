@@ -17,7 +17,7 @@ window.nativeShareCancel = false;
 window.nativeBrowserFailure = false;
 window.nativeScheduleFailure = false;
 const methods = {
-  App: ['minimizeApp'],
+  App: ['minimizeApp', 'getLaunchUrl'],
   LocalNotifications: ['checkPermissions', 'requestPermissions', 'cancel', 'createChannel', 'schedule'],
   Haptics: ['impact'], Share: ['share'], Browser: ['open'], SystemBars: ['setStyle'],
 };

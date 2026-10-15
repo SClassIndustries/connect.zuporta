@@ -14,6 +14,8 @@ jobs:
   validate:
     runs-on: macos-26
     timeout-minutes: 40
+    env:
+      SENTRY_DSN: ${{ vars.SENTRY_DSN }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -51,6 +53,8 @@ jobs:
     environment: mobile-signing
     runs-on: macos-26
     timeout-minutes: 40
+    env:
+      SENTRY_DSN: ${{ vars.SENTRY_DSN }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:

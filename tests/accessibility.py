@@ -16,6 +16,9 @@ with sync_playwright() as p:
         page.goto('http://127.0.0.1:8000/#/settings', wait_until='networkidle')
         page.get_by_role('button', name='Manage permissions').click()
         expect(page.get_by_role('dialog')).to_be_visible()
+        for _ in range(8):
+            page.keyboard.press('Tab')
+            assert page.evaluate('!!document.activeElement.closest("[role=dialog]")'), 'Keyboard focus left modal'
         page.keyboard.press('Escape')
         expect(page.get_by_role('dialog')).not_to_be_visible()
         print(f'PASS: {width}px viewport, accessible control names and keyboard dialog dismissal')

@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
+      SENTRY_DSN: ${{ vars.SENTRY_DSN }}
       ANDROID_HOME: ${{ runner.temp }}/zuporta-android-sdk
       ANDROID_USER_HOME: ${{ runner.temp }}/zuporta-android-user
     steps:
@@ -54,6 +55,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
+      SENTRY_DSN: ${{ vars.SENTRY_DSN }}
       ANDROID_HOME: ${{ runner.temp }}/zuporta-android-sdk
       ANDROID_USER_HOME: ${{ runner.temp }}/zuporta-android-user
     steps:

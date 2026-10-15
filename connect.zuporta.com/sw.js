@@ -17,7 +17,7 @@
    coupled to the markup.
    ============================================================ */
 
-const VERSION = 'zuporta-v13';
+const VERSION = 'zuporta-v14';
 
 const SHELL = [
   './',
@@ -28,6 +28,7 @@ const SHELL = [
   './assets/css/app.css',
   './assets/js/app.js',
   './assets/js/native.js',
+  './assets/js/monitoring.js',
   './assets/js/data.js',
   './assets/js/assistant.js',
   './assets/js/modules.js',

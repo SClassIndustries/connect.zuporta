@@ -21,7 +21,8 @@
     "test:native-ui": "python3 tests/native_ui.py",
     "lint": "eslint .",
     "check:package": "node scripts/check-package.mjs",
-    "test:a11y": "python3 tests/accessibility.py"
+    "test:a11y": "python3 tests/accessibility.py",
+    "links:android": "node scripts/configure-links.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",
@@ -31,7 +32,9 @@
     "@capacitor/haptics": "8.0.2",
     "@capacitor/ios": "8.5.3",
     "@capacitor/local-notifications": "8.3.1",
-    "@capacitor/share": "8.0.3"
+    "@capacitor/share": "8.0.3",
+    "@sentry/browser": "10.69.0",
+    "@sentry/capacitor": "4.4.0"
   },
   "devDependencies": {
     "@capacitor/assets": "3.0.5",
@@ -40,5 +43,10 @@
     "eslint": "10.0.3",
     "globals": "17.4.0"
   },
-  "type": "module"
+  "type": "module",
+  "overrides": {
+    "tar": "7.5.22",
+    "sharp": "0.35.5",
+    "uuid": "11.1.1"
+  }
 }
