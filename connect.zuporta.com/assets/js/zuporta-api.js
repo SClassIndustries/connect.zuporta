@@ -105,7 +105,7 @@ function writeCache(pros) {
 
 function cachedRoster(cache) {
   if (!cache) return null;
-  return Date.now() - cache.at < CACHE_TTL ? cache.pros
+  return Date.now() - cache.at < CACHE_TTL ? cache.pros.map((pro) => ({ ...pro, title: 'Coach' }))
     : cache.pros.map((pro) => ({ ...pro, availability: 'schedule', slot: 'Check availability on Zuporta' }));
 }
 /** Old cached profiles remain useful, but never retain a stale online claim. */
@@ -118,7 +118,7 @@ export const cachedPros = () => cachedRoster(readCache());
  * server failure it falls back to the last good cache, and only then to
  * null — so the caller can decide whether to show bundled sample data.
  */
-export async function fetchPros({ pages = 2, force = false } = {}) {
+export async function fetchPros({ pages = 10, force = false } = {}) {
   const cache = readCache();
   if (!force && cache && Date.now() - cache.at < CACHE_TTL) return cache.pros;
 

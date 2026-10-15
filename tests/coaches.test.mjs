@@ -52,3 +52,12 @@ test('stale offline profiles do not claim that a coach is still online', () => {
   assert.equal(cachedPros()[0].availability, 'schedule');
   assert.equal(cachedPros()[0].slot, 'Check availability on Zuporta');
 });
+
+test('the directory follows a third page instead of silently stopping after two', async () => {
+  memory.clear(); let page = 0;
+  globalThis.fetch = async () => ({ ok: true, json: async () => ({ data: {
+    items: [coach({ id: 'page-' + (++page) })], has_more_pages: page < 3,
+  } }) });
+  assert.equal((await fetchPros({ force: true })).length, 3);
+  assert.equal(page, 3);
+});

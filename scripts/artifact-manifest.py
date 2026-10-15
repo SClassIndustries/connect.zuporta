@@ -19,6 +19,9 @@ for path in sorted(args.directory.rglob('*')):
     with zipfile.ZipFile(path) as archive:
         names = archive.namelist()
         signed = any(name.startswith('META-INF/') and name.endswith(('.RSA', '.DSA', '.EC')) for name in names)
+        if path.suffix == '.apk':
+            # Modern Android debug/release APKs can use v2/v3 signing without v1 JAR entries.
+            signed = signed or b'APK Sig Block 42' in path.read_bytes()
         if path.suffix == '.ipa':
             signed = any('/_CodeSignature/CodeResources' in name for name in names)
     if args.require_signed and not signed:
