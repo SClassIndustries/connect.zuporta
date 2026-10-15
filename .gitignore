@@ -11,3 +11,5 @@ build/
 *.xcarchive/
 *.keychain-db
 *.p8
+android/.kotlin/
+build-*.log

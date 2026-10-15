@@ -13,6 +13,7 @@ with sync_playwright() as p:
             assert not page.evaluate('document.documentElement.scrollWidth > innerWidth'), (width, route, 'horizontal overflow')
             unnamed = page.locator('button:visible').evaluate_all('''nodes => nodes.filter(n => !n.textContent.trim() && !n.getAttribute('aria-label') && !n.getAttribute('aria-labelledby')).length''')
             assert unnamed == 0, (width, route, 'unnamed controls')
+        page.goto('http://127.0.0.1:8000/#/settings', wait_until='networkidle')
         page.get_by_role('button', name='Manage permissions').click()
         expect(page.get_by_role('dialog')).to_be_visible()
         page.keyboard.press('Escape')
