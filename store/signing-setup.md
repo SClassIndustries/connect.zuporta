@@ -34,13 +34,15 @@ upload key in a secure owner-controlled backup.
 
 ## Optional Sentry configuration
 
-Create/select the owner's Zuporta+ Sentry project. Put its **public DSN** in
-the repository Actions variable **SENTRY_DSN**. This is the ingest destination,
-not a Sentry auth/API token. The build embeds it in the mobile adapter.
-Project bindings must be authorized by the owner; no account was created here.
+The owner supplied the public US Sentry DSN on 2026-10-16. The native build
+now defaults to that destination, project **4512261792006144**. No GitHub
+variable is required. A nonempty repository Actions variable **SENTRY_DSN**
+can override the default if the owner changes projects. This is an ingest
+destination, not a Sentry auth/API token; no private Sentry token is embedded.
+No Sentry account or project was created here.
 
-Without the variable, diagnostics remain unavailable/off; no event is sent.
-With it, testers must enable optional diagnostics in Settings. Confirm the
+Configuration does not enable collection. Testers must enable optional
+diagnostics in Settings. Confirm the
 diagnostic check arrives, verify native crashes/hangs using a controlled
 test build, and check Sentry retention/PII settings. Upload produced dSYMs to
 the matching Sentry release if symbolication is required. Count only the

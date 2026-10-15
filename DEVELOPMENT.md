@@ -153,9 +153,10 @@ artifact jobs. `store/qa-checklist.md` is the owner device/compliance worksheet;
 drafts can be regenerated with `python3 scripts/store-screenshots.py` while
 the local server runs. No pipeline submits or rolls out a store release.
 
-`SENTRY_DSN` is an optional public Actions variable, consumed during native
-adapter builds. It is never a Sentry API token. Configuration alone does not
-enable collection: the native user must opt in under Settings. The checked-in
-web preview has no bound Sentry destination. Native SDKs are pinned; the npm
+The owner-supplied public Sentry DSN (project `4512261792006144`) is the native
+adapter build default. A nonempty `SENTRY_DSN` Actions/environment variable
+overrides it. It is never a Sentry API token. Configuration alone does not
+enable collection: the native user must opt in under Settings, and browser/PWA
+diagnostics remain disabled. Native SDKs are pinned; the npm
 overrides for tar/sharp/uuid remove known tooling vulnerabilities and have
 been checked through sync, native asset generation and builds.
