@@ -51,7 +51,7 @@ Android and an older supported iPhone. Simulator/browser checks are separate.
 - [ ] Measure cold starts on mid-range devices using adb/Android Studio and
   Xcode Instruments. Define the launch boundary, record repeated runs and
   the distribution, and check the owner's under-two-second target.
-- [ ] Configure Sentry, enable diagnostics on the QA builds, verify event
+- [ ] Use the configured Sentry project, enable diagnostics on the QA builds, verify event
   delivery and native crash/hang reporting, and review Android Vitals where
   available. Record the observation window, monitored-session denominator,
   crash-free percentage and ANR findings. Owner target: at least 99.5%

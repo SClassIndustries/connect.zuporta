@@ -1,7 +1,7 @@
 # Zuporta+ release-candidate validation
 
 Validated 2026-10-15 UTC (2026-10-16 Asia/Manila). Application code commit:
-`68e6fe98848e3230097b83d7f6e3371a6bdad1a6` on
+`46c8a21580648c4a1955402a4aac35c448d60d7c` on
 `jet/kind-maxwell-nzz6vr`. Later handoff/documentation commits do not change
 the application packaged in these artifacts. PR #1 remains unmerged.
 
@@ -11,9 +11,9 @@ All three checks completed successfully for this code commit:
 
 | Check | Evidence |
 | --- | --- |
-| Web and business logic | https://github.com/SClassIndustries/connect.zuporta/actions/runs/38788634908 |
-| Android artifacts | https://github.com/SClassIndustries/connect.zuporta/actions/runs/38788634853 |
-| iPhone artifacts | https://github.com/SClassIndustries/connect.zuporta/actions/runs/38788634911 |
+| Web and business logic | https://github.com/SClassIndustries/connect.zuporta/actions/runs/38793488824 |
+| Android artifacts | https://github.com/SClassIndustries/connect.zuporta/actions/runs/38793488827 |
+| iPhone artifacts | https://github.com/SClassIndustries/connect.zuporta/actions/runs/38793488870 |
 
 The workflows compile and validate on code changes. Signed artifact jobs
 require an explicit manual run and protected signing settings. No job
@@ -30,7 +30,11 @@ uploads to a store or promotes the website.
 - Release-edge browser checks exercise all three nested web entry links
   and the compiled Sentry JavaScript SDK against a synthetic native bridge:
   no initialization before consent, restrictive options, filtered event
-  envelopes and closing on opt-out. No real Sentry event delivery is claimed.
+  envelopes and closing on opt-out. The shipped adapter was also checked
+  against a synthetic bridge with HTTPS blocked: it supplied the owner DSN
+  for US project `4512261792006144` only after consent and closed on opt-out.
+  The supplied DSN is now the build default; no Actions variable is required.
+  No real Sentry event delivery is claimed.
 - ESLint, package/source hygiene and dependency audit pass. The npm audit
   reported zero known vulnerabilities at validation time.
 - Android debug APK and unsigned release AAB compile. Release/debug lint
@@ -62,8 +66,8 @@ its local records. It cannot be uploaded as the production Play release.
 
 | Artifact | Bytes | SHA-256 | Signing |
 | --- | ---: | --- | --- |
-| app-debug.apk | 9800204 | `3216f042f2327e337047d6ed070981194d663b86b18911134178a84bd0b13d7e` | Development-signed, Android QA only |
-| app-release.aab | 5497286 | `054fd231b54ccad424ca2c5523bfe2d33b32b3b26ef71d5388a11c025ff293a0` | Unsigned, validation only |
+| app-debug.apk | 9800204 | `d0f183dc30285e42dfc3f3f22a0b85a12754ef4b4f547fe4302aa1bfd19a8961` | Development-signed, Android QA only |
+| app-release.aab | 5497370 | `3f8bea33f5bd6ccf956b28b72e4a9e82378e74bf9320de7be7ac69164a56a949` | Unsigned, validation only |
 
 CI artifacts include their own manifests and may have different hashes due
 to build numbers/toolchain metadata. Always match QA evidence to the exact
@@ -74,7 +78,10 @@ downloaded artifact rather than copying these local hashes to another build.
 https://zuporta-ai-coaches-ljh2wm1jk-eld-e0424773.vercel.app
 
 Vercel deployment `dpl_FkqZbzQcXPwYiK8jetYwFv57VqRA` is READY, with no
-production target, and references the exact code commit above. Authorized
+production target, and references the earlier QA code commit
+`68e6fe98848e3230097b83d7f6e3371a6bdad1a6`, before the owner DSN was supplied.
+The DSN follow-up changes the native build default; PWA diagnostics remain
+disabled. Authorized
 fetches of the root, `/open/coaches` and Apple association return HTTP 200.
 The association is served as `application/json` and names
 `9G5XD8GWXZ.com.zuporta.plus`. Vercel protection is retained. This does not
@@ -83,7 +90,7 @@ establish signed-device link handling or publish the unfinished legal drafts.
 ## Remaining release requirements
 
 See `signing-setup.md`, `qa-checklist.md` and `../RELEASE_GATES.md`.
-Real upload/distribution credentials, the Sentry project DSN/operational
+Real upload/distribution credentials, live Sentry delivery/operational
 settings, signed builds, physical-device results, startup/stability evidence,
 approved policy facts, public associations and final console forms remain
 owner-dependent. No TestFlight/Play upload, production deployment, legal

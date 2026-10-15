@@ -48,6 +48,10 @@ test build, and check Sentry retention/PII settings. Upload produced dSYMs to
 the matching Sentry release if symbolication is required. Count only the
 actually monitored sessions when reporting stability.
 
+For the first check, enable optional diagnostics and tap **Send a diagnostic
+check**. Look for **Application error** in the configured project; that
+generic message is intentional because arbitrary error text is filtered.
+
 ## Generate files
 
 1. Open Actions and the latest commit's **Web and business logic**, **Android
